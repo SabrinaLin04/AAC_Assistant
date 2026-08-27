@@ -28,8 +28,8 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
         val message = messageList[position]
         val isUser = message.author == "user"
 
-        holder.binding.authorLabel.text = if (isUser) "You" else "Assistant"
-        holder.binding.authorLabel.gravity = if (isUser) Gravity.END else Gravity.START
+        holder.binding.message = message
+        holder.binding.executePendingBindings()
 
         holder.binding.messageText.text = message.text
 

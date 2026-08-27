@@ -1,29 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/messageContainer"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingHorizontal="14dp"
-    android:paddingVertical="3dp">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <variable
+            name="message"
+            type="it.lbsl.aacassistant.ChatMessage" />
+    </data>
 
-    <TextView
-        android:id="@+id/authorLabel"
+    <LinearLayout
+        android:id="@+id/messageContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="2dp"
-        android:paddingHorizontal="6dp"
-        android:textColor="#999999"
-        android:textSize="11sp" />
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="3dp">
 
-    <TextView
-        android:id="@+id/messageText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:maxWidth="280dp"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="10dp"
-        android:lineSpacingExtra="2dp"
-        android:textSize="15sp" />
+        <TextView
+            android:id="@+id/authorLabel"
+            android:text='@{message.author.equals("user") ? "Tu" : "Assistente"}'
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="2dp"
+            android:paddingHorizontal="6dp"
+            android:textColor="#999999"
+            android:textSize="11sp" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/messageText"
+            android:text="@{message.text}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="280dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:lineSpacingExtra="2dp"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+
+</layout>
