@@ -2,18 +2,21 @@ package it.lbsl.aacassistant
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.ErrorCodes
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
 import it.lbsl.aacassistant.databinding.ActivityWelcomeBinding
+import kotlinx.coroutines.launch
 
 class WelcomeActivity : AppCompatActivity() {
 
@@ -78,8 +81,15 @@ class WelcomeActivity : AppCompatActivity() {
 
     private fun navigateToMain() {
         if (isFinishing) return
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
+        lifecycleScope.launch {
+            try {
+                FirestoreRepository().createOrUpdateProfile()
+            } catch (e: Exception) {
+                Log.w("WelcomeActivity", "Profile sync failed", e)
+            }
+            startActivity(Intent(this@WelcomeActivity, MainActivity::class.java))
+            finish()
+        }
     }
     private fun setLoading(loading: Boolean) {
         binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
