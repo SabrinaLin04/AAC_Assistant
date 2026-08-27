@@ -66,10 +66,11 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
         val oldSize = messageList.size
         messageList = newMessages
 
-        if (newMessages.size > oldSize) {
-            notifyItemInserted(newMessages.lastIndex)
-        } else if (newMessages.isNotEmpty()) {
-            notifyItemChanged(newMessages.lastIndex)
+        when {
+            newMessages.size - oldSize > 1 -> notifyDataSetChanged()
+            newMessages.size > oldSize -> notifyItemInserted((newMessages.lastIndex))
+            newMessages.isNotEmpty() -> notifyItemChanged(newMessages.lastIndex)
+            else -> notifyDataSetChanged()
         }
     }
 }
