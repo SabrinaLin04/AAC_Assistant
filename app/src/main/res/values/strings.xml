@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">AAC Assistant</string>
+    <string name="welcome_subtitle">Comunicazione aumentativa e alternativa assistita</string>
+    <string name="sign_in">Accedi</string>
+    <string name="sign_in_cancelled">Accesso annullato</string>
+    <string name="sign_in_error">Errore di accesso: %1$s</string>
+    <string name="no_network">Nessuna connessione di rete</string>
 </resources>
