@@ -5,4 +5,8 @@
     <string name="sign_in_cancelled">Accesso annullato</string>
     <string name="sign_in_error">Errore di accesso: %1$s</string>
     <string name="no_network">Nessuna connessione di rete</string>
+    <string name="error_load_favorites">Impossibile caricare i preferiti</string>
+    <string name="error_toggle_favorite">Operazione non riuscita</string>
+    <string name="error_delete_favorite">Impossibile eliminare</string>
+    <string name="favorites_empty">Nessun preferito. Premi la stella su una frase per salvarla.</string>
 </resources>
