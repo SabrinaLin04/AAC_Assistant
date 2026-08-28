@@ -2,14 +2,16 @@ package it.lbsl.aacassistant
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import it.lbsl.aacassistant.databinding.ItemFavoriteBinding
 
 class FavoritesAdapter (
     private val onUse: (Favorite) -> Unit
 ) : ListAdapter<Favorite, FavoritesAdapter.VH> (DIFF){
 
-    class VH(val binding: ItemFavoriteBinding) : RecyclerView.viewHolder(binding.root)
+    class VH(val binding: ItemFavoriteBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
        VH(ItemFavoriteBinding.inflate(

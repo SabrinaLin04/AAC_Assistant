@@ -60,9 +60,23 @@
     <string name="favorites_empty">Nessun preferito. Premi la stella su una frase per salvarla.</string>
 
     <string name="favorite_used">Frase selezionata</string>
+    <string name="action_toggle_favorite">Aggiungi ai preferiti</string>
 
     <plurals name="favorite_usage_count">
         <item quantity="one">Usata %1$d volta</item>
         <item quantity="other">Usata %1$d volte</item>
     </plurals>
+
+    <string name="error_load_contexts">Impossibile caricare i contesti</string>
+    <string name="error_add_context">Impossibile creare il contesto</string>
+    <string name="error_update_context">Impossibile aggiornare il contesto</string>
+    <string name="error_delete_context">Impossibile eliminare il contesto</string>
+    <string name="error_select_context">Impossibile selezionare il contesto</string>
+
+    <string name="contexts_empty">Nessun contesto. Tocca + per crearne uno.</string>
+    <string name="add_context_title">Nuovo contesto</string>
+    <string name="edit_context_title">Modifica contesto</string>
+
+    <string name="context_name_hint">Nome (es. Visita medica)</string>
+    <string name="context_description_hint">Descrizione della situazione per l\'assistente</string>
 </resources>
