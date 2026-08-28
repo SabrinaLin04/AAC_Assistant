@@ -1,6 +1,7 @@
 package it.lbsl.aacassistant
 
 import android.graphics.Color
+import android.view.View
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -8,9 +9,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
-class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
-
+class ChatAdapter (
+    private val isFavorite: (String) -> Boolean = { false },
+    private val onToggleFavorite: (String) -> Unit = {}
+) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
     private var messageList: List<ChatMessage> = emptyList()
+
 
     class ChatViewHolder(val binding: ItemChatMessageBinding) :
         RecyclerView.ViewHolder(binding.root)
@@ -60,8 +64,30 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
             holder.binding.messageText.background = drawable
             holder.binding.messageText.setTextColor(Color.parseColor("#1A1A1A"))
         }
+
+        val star = holder.binding.favoriteStar
+        val context = holder.itemView.context
+
+        if (isUser || message.text.isBlank()) {
+            star.visibility = View.GONE
+        } else {
+            star.visibility = View.VISIBLE
+            val saved = isFavorite(message.text)
+
+            star.setImageResource(
+                if (saved) android.R.drawable.btn_star_big_on
+                else android.R.drawable.btn_star_big_off
+            )
+            star.contentDescription = context.getString(
+                if (saved) R.string.favorite_deleted else R.string.favorite_added
+            )
+            star.setOnClickListener { onToggleFavorite(message.text) }
+        }
     }
 
+    fun refreshStars() {
+        notifyItemRangeChanged(0, itemCount)
+    }
     fun updateMessages(newMessages: List<ChatMessage>) {
         val oldSize = messageList.size
         messageList = newMessages
