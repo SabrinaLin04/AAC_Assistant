@@ -17,19 +17,20 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import androidx.annotation.StringRes
 
 sealed interface ModelState {
     object Idle : ModelState
     data class Downloading(val percent: Int) : ModelState
-    data class Initializing(val message: String) : ModelState
+    data class Initializing(@StringRes val messageRes: Int) : ModelState
     object Ready : ModelState
-    data class Error(val cause: String) : ModelState
+    data class Error(@StringRes val messageRes: Int, val detail: String? = null) : ModelState
 }
 
 sealed interface ChatState {
     object Idle : ChatState
     object Generating : ChatState
-    data class Error(val cause: String) : ChatState
+    data class Error(@StringRes val messageRes: Int, val detail: String? = null) : ChatState
 }
 
 data class ChatMessage(
@@ -65,12 +66,12 @@ class LlmViewModel : ViewModel() {
                 if (!modelFile.exists()) {
                     val source = File("/tmp/$MODEL_FILENAME")
                     if (source.exists()) {
-                        _modelState.value = ModelState.Initializing("Copying model...")
+                        _modelState.value = ModelState.Initializing(R.string.model_copying)
                         withContext(Dispatchers.IO) {
                             source.copyTo(modelFile)
                         }
                     } else {
-                        _modelState.value = ModelState.Error("Model not found on device")
+                        _modelState.value = ModelState.Error(R.string.error_model_not_found)
                         return@launch
                     }
                 }
@@ -79,14 +80,15 @@ class LlmViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 _modelState.value = ModelState.Error(
-                    e.localizedMessage ?: "Unknown error"
+                    messageRes = R.string.error_unknown,
+                    detail = e.localizedMessage
                 )
             }
         }
     }
 
     private suspend fun loadEngine(modelPath: String, context: Context) {
-        _modelState.value = ModelState.Initializing("Loading model...")
+        _modelState.value = ModelState.Initializing(R.string.model_initializing)
 
         val loadedEngine = withContext(Dispatchers.IO) {
             val engineConfig = EngineConfig(
@@ -129,7 +131,8 @@ class LlmViewModel : ViewModel() {
             conv.sendMessageAsync(text)
                 .catch { error ->
                     _chatState.value = ChatState.Error(
-                        error.localizedMessage ?: "Generation error"
+                        messageRes = R.string.error_generation,
+                        detail = error.localizedMessage
                     )
                 }
                 .collect { chunk ->
