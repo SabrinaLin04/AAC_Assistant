@@ -124,15 +124,16 @@ class SuggestFragment: Fragment() {
                         state.detail?.let { append("\n").append(it)}
                     }
                 )
-                favoritesViewModel.favorites.observe(viewLifecycleOwner){
-                    chatAdapter.refreshStars()
-                }
-                favoritesViewModel.errorMessage.observe(viewLifecycleOwner){ resId ->
-                    resId ?: return@observe
-                    Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_SHORT).show()
-                    favoritesViewModel.clearError()
-                }
             }
+        }
+
+        favoritesViewModel.favorites.observe(viewLifecycleOwner){
+            chatAdapter.refreshStars()
+        }
+        favoritesViewModel.errorMessage.observe(viewLifecycleOwner){ resId ->
+            resId ?: return@observe
+            Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_SHORT).show()
+            favoritesViewModel.clearError()
         }
 
         viewModel.messages.observe(viewLifecycleOwner) { messages ->

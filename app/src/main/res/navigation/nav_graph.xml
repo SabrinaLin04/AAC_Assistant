@@ -8,7 +8,19 @@
     <fragment
         android:id="@+id/suggestFragment"
         android:name="it.lbsl.aacassistant.SuggestFragment"
-        android:label="@string/app_name"
+        android:label="@string/title_suggest"
         tools:layout="@layout/fragment_suggest" />
+
+    <fragment
+        android:id="@+id/favoritesFragment"
+        android:name="it.lbsl.aacassistant.FavoritesFragment"
+        android:label="@string/title_favorites"
+        tools:layout="@layout/fragment_favorites" />
+
+    <fragment
+        android:id="@+id/contextsFragment"
+        android:name="it.lbsl.aacassistant.ContextsFragment"
+        android:label="@string/title_contexts"
+        tools:layout="@layout/fragment_contexts" />
 
 </navigation>

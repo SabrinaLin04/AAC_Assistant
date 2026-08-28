@@ -1,16 +1,23 @@
 package it.lbsl.aacassistant
 
+import androidx.core.view.updatePadding
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.NavController
+import androidx.activity.addCallback
+import androidx.core.view.GravityCompat
+import android.view.View
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import it.lbsl.aacassistant.databinding.ActivityMainBinding
 import androidx.navigation.ui.navigateUp
+import com.firebase.ui.auth.AuthUI
+import androidx.appcompat.app.AlertDialog
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,19 +34,26 @@ class MainActivity : AppCompatActivity() {
         setupWindowInsets()
         setSupportActionBar(binding.toolbar)
         setupNavigation()
+
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
     }
         private fun setupWindowInsets() {
-            ViewCompat.setOnApplyWindowInsetsListener(binding.main) { view, insets ->
+            ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+                val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
 
-                val bottomPadding = maxOf(systemBars.bottom, imeInsets.bottom)
-
-                view.setPadding(
-                    systemBars.left,
-                    systemBars.top,
-                    systemBars.right,
-                    bottomPadding
+                binding.toolbar.updatePadding(top = systemBars.top)
+                binding.navHostFragment.updatePadding(
+                    left = systemBars.left,
+                    right = systemBars.right,
+                    bottom = maxOf(systemBars.bottom, ime.bottom)
                 )
                 insets
             }
@@ -51,10 +65,41 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        appBarConfiguration = AppBarConfiguration(navController.graph)
+        appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
+        binding.navigationView.setupWithNavController(navController)
+        setupLogoutRow()
+    }
+    private fun setupLogoutRow() {
+        binding.navigationView
+            .findViewById<View>(R.id.logoutRow)
+            .setOnClickListener {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+                confirmLogout()
+            }
     }
 
     override fun onSupportNavigateUp(): Boolean =
         navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+
+    private fun confirmLogout() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.logout_confirm_title)
+            .setMessage(R.string.logout_confirm_message)
+            .setPositiveButton(R.string.action_logout) { _, _ -> logout() }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun logout() {
+        AuthUI.getInstance()
+            .signOut(this)
+            .addOnCompleteListener {
+                val intent = Intent(this, WelcomeActivity::class.java)
+                intent.flags =
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+    }
 }

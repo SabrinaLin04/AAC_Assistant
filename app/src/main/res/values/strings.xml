@@ -34,6 +34,7 @@
     <string name="favorite_edit">Modifica preferito</string>
     <string name="favorite_hint">Frase da salvare</string>
     <string name="favorite_added">Aggiunto ai preferiti</string>
+    <string name="favorite_removed">Rimosso dai preferiti</string>
     <string name="favorite_deleted">Preferito eliminato</string>
 
     <string name="contexts_empty_title">Nessun contesto</string>
@@ -53,6 +54,11 @@
     <string name="sign_in_cancelled">Accesso annullato</string>
     <string name="no_network">Nessuna connessione internet</string>
     <string name="sign_in_error">Errore di accesso: %1$s</string>
+    <string name="sign_in">Accedi</string>
+    <string name="welcome_subtitle">Il tuo assistente per la comunicazione aumentativa alternativa</string>
+
+    <string name="logout_confirm_title">Uscire dall\'account?</string>
+    <string name="logout_confirm_message">Dovrai accedere di nuovo per usare l\'app.</string>
 
     <string name="error_load_favorites">Impossibile caricare i preferiti</string>
     <string name="error_toggle_favorite">Operazione non riuscita</string>
@@ -79,4 +85,5 @@
 
     <string name="context_name_hint">Nome (es. Visita medica)</string>
     <string name="context_description_hint">Descrizione della situazione per l\'assistente</string>
+
 </resources>
