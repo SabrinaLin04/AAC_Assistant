@@ -11,7 +11,6 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import it.lbsl.aacassistant.databinding.ActivityMainBinding
 import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupWithNavController
 
 class MainActivity : AppCompatActivity() {
 

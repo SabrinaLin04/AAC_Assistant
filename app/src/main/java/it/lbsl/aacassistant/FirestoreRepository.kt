@@ -39,12 +39,12 @@ class FirestoreRepository {
     suspend fun getContexts() : List<UserContext> =
         contexts().get().await().toObjects(UserContext::class.java)
 
-    suspend fun  incrementFavoriteUsage (favoriteID: String) {
-        favorites().document(favoriteID).update("usageCount", FieldValue.increment(1)).await()
+    suspend fun  incrementFavoriteUsage (favoriteId: String) {
+        favorites().document(favoriteId).update("usageCount", FieldValue.increment(1)).await()
     }
 
-    suspend fun updateContext (contextID: String, name : String, description: String) {
-        contexts().document(contextID).update(mapOf("name" to name, "description" to description)).await()
+    suspend fun updateContext (contextId: String, name : String, description: String) {
+        contexts().document(contextId).update(mapOf("name" to name, "description" to description)).await()
     }
 
     suspend fun deleteFavorite(favoriteId: String) {

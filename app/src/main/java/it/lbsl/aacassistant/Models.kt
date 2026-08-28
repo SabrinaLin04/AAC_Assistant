@@ -14,6 +14,7 @@ data class Favorite(
     @DocumentId val id: String ="",
     val text: String = "",
     val pictogramIds: List<Int> = emptyList(),
+    val usageCount: Int = 0,
     val createdAt: Timestamp = Timestamp.now(),
 )
 
