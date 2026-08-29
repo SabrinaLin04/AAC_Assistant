@@ -85,5 +85,7 @@
 
     <string name="context_name_hint">Nome (es. Visita medica)</string>
     <string name="context_description_hint">Descrizione della situazione per l\'assistente</string>
-
+    <string name="context_active">ATTIVO</string>
+    <string name="context_selected">Contesto attivo: %1$s</string>
+    <string name="context_none">Nessun contesto</string>
 </resources>
