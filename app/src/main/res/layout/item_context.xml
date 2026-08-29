@@ -40,12 +40,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:ellipsize="end"
-            android:maxLines="2"
+            android:maxLines="3"
             android:textSize="14sp"
             android:textColor="#666666"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/contextName"
+            app:layout_constraintBottom_toBottomOf="parent"
             tools:text="L'utente è in ambulatorio con un medico e potrebbe dover descrivere sintomi o dolore." />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

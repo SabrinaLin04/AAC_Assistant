@@ -22,5 +22,10 @@
         android:name="it.lbsl.aacassistant.ContextsFragment"
         android:label="@string/title_contexts"
         tools:layout="@layout/fragment_contexts" />
+    <fragment
+        android:id="@+id/creditsFragment"
+        android:name="it.lbsl.aacassistant.CreditsFragment"
+        android:label="@string/title_credits"
+        tools:layout="@layout/fragment_credits" />
 
 </navigation>
