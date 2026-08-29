@@ -106,4 +106,7 @@
     <string name="context_active">ATTIVO</string>
     <string name="context_selected">Contesto attivo: %1$s</string>
     <string name="context_none">Nessun contesto</string>
+
+    <string name="action_suggest">Suggerisci frasi</string>
+    <string name="demo_mode_banner">Modalità dimostrativa — modello non caricato</string>
 </resources>

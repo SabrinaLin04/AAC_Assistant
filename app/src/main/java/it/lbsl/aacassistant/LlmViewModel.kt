@@ -18,12 +18,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.annotation.StringRes
+import kotlinx.coroutines.delay
 
 sealed interface ModelState {
     object Idle : ModelState
     data class Downloading(val percent: Int) : ModelState
     data class Initializing(@StringRes val messageRes: Int) : ModelState
     object Ready : ModelState
+
+    object DemoMode : ModelState
     data class Error(@StringRes val messageRes: Int, val detail: String? = null) : ModelState
 }
 
@@ -48,14 +51,39 @@ class LlmViewModel : ViewModel() {
 
     private val _chatState = MutableLiveData<ChatState>(ChatState.Idle)
     val chatState: LiveData<ChatState> = _chatState
-
     private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
     val messages: LiveData<List<ChatMessage>> = _messages
+
+    private val demoSuggestions = mapOf(
+        "pasto" to listOf(
+            "Ho fame.", "Vorrei ancora un po', per favore.",
+            "Ho finito, grazie.", "Posso avere dell'acqua?"
+        ),
+        "medico" to listOf(
+            "Mi fa male qui.", "Il dolore è forte.",
+            "Non capisco, può ripetere?", "Vorrei che mia madre restasse con me."
+        ),
+        "scuola" to listOf(
+            "Non ho capito l'esercizio.", "Posso andare in bagno?",
+            "Ho bisogno di aiuto.", "Ho finito il compito."
+        ),
+        "casa" to listOf(
+            "Vorrei riposare.", "Ho voglia di uscire.",
+            "Posso guardare la televisione?", "Mi sento stanco."
+        )
+    )
+
+    private val demoFallback = listOf(
+        "Ho bisogno di aiuto.", "Sì, grazie.",
+        "No, preferisco di no.", "Vorrei riposare un momento."
+    )
 
     private var engine: Engine? = null
     private var conversation: Conversation? = null
 
     private var contextDescription: String? = null
+
+    private var lastDemoReply: String? = null
 
     companion object {
         private const val MODEL_FILENAME = "gemma3-1b-it-int4.litertlm"
@@ -67,14 +95,14 @@ class LlmViewModel : ViewModel() {
                 val modelFile = File(context.filesDir, MODEL_FILENAME)
 
                 if (!modelFile.exists()) {
-                    val source = File("/tmp/$MODEL_FILENAME")
+                    val source = File("/data/local/tmp/$MODEL_FILENAME")
                     if (source.exists()) {
                         _modelState.value = ModelState.Initializing(R.string.model_copying)
                         withContext(Dispatchers.IO) {
                             source.copyTo(modelFile)
                         }
                     } else {
-                        _modelState.value = ModelState.Error(R.string.error_model_not_found)
+                        _modelState.value = ModelState.DemoMode
                         return@launch
                     }
                 }
@@ -82,10 +110,11 @@ class LlmViewModel : ViewModel() {
                 loadEngine(modelFile.absolutePath, context)
 
             } catch (e: Exception) {
-                _modelState.value = ModelState.Error(
+                /*_modelState.value = ModelState.Error(
                     messageRes = R.string.error_unknown,
                     detail = e.localizedMessage
-                )
+                    )*/
+                _modelState.value = ModelState.DemoMode
             }
         }
     }
@@ -99,6 +128,15 @@ class LlmViewModel : ViewModel() {
             ?.takeIf { it.isNotBlank() }
             ?.let { "$base La situazione attuale è: $it" }
             ?: base
+    }
+
+    //prende le frasi demo in base al contesto attivo
+    private fun pickDemoSuggestions(): List<String> {
+        val ctx = contextDescription?.lowercase() ?: return demoFallback
+        return demoSuggestions.entries
+            .firstOrNull { (key, _) -> ctx.contains(key) }
+            ?.value
+            ?: demoFallback
     }
 
     private fun createConversation() {
@@ -136,6 +174,37 @@ class LlmViewModel : ViewModel() {
         _modelState.value = ModelState.Ready
     }
 
+    // prende la parola piu lunga che non è una stopword (che probabilmente ha un pittogramma)
+    // la lemmatizzazione corretta verrà integrata per la tesi
+    private fun extractKeyword(sentence: String): String? {
+        val stopwords = setOf(
+            "il", "lo", "la", "l'", "i", "gli", "le", "un", "un'", "uno", "una",
+            "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
+            "del", "dell'", "dello", "della", "dei", "degli", "delle",
+            "al", "all'", "allo", "alla", "ai", "agli", "alle",
+            "dal", "dall'", "nel", "nell'", "nella", "nello", "negli", "nelle", "nei",
+            "sul", "sull'", "sulla", "sugli", "sulle", "sullo",
+            "che", "ci", "si", "ne", "e", "ed", "o", "od", "ma", "vi", "ad"
+        )
+
+        return sentence
+            .lowercase()
+            .split(Regex("[^\\p{L}]+"))
+            .filter { it.length > 2 && it !in stopwords }
+            .maxByOrNull { it.length }
+    }
+    private suspend fun resolvePictogram(sentence: String) {
+        val keyword = extractKeyword(sentence) ?: return
+
+        // se manca un pittogramma rimane testo
+        val id = PictogramRepository.findPictogram(keyword) ?: return
+
+        val list = _messages.value.orEmpty().toMutableList()
+        if (list.isEmpty()) return
+        list[list.lastIndex] = list.last().copy(pictogramId = id)
+        _messages.value = list
+    }
+
     fun setContext(description: String?) {
         if (description == contextDescription) return
 
@@ -143,12 +212,16 @@ class LlmViewModel : ViewModel() {
 
         if (engine != null) {
             createConversation()
-            _messages.value = emptyList()
-            _chatState.value = ChatState.Idle
         }
+        _messages.value = emptyList()
+        _chatState.value = ChatState.Idle
     }
 
     fun sendMessage(text: String) {
+        if (_modelState.value is ModelState.DemoMode) {
+            sendDemoMessage(text)
+            return
+        }
         val conv = conversation ?: return
 
         viewModelScope.launch {
@@ -176,23 +249,97 @@ class LlmViewModel : ViewModel() {
                     _messages.value = updatedList
                 }
 
-            val finalText = accumulated.toString()
-            val firstWord = finalText
-                .split(" ", ",",".")
-                .firstOrNull{ it.length > 3 } //salto articoli e preposizioni (demo), placeholder per la lemmatizzazione
-            val pictogramId = firstWord?.let { PictogramRepository.findPictogram(it) }
-
-            if (pictogramId!=null) {
-                val list = _messages.value.orEmpty().toMutableList()
-                list[list.lastIndex] = list.last().copy(pictogramId= pictogramId)
-                _messages.value = list
-            }
+            resolvePictogram(accumulated.toString())
 
             if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
             }
         }
     }
+
+    fun requestSuggestions() {
+        if (_modelState.value is ModelState.DemoMode) {
+            requestDemoSuggestions()
+            return
+        }
+
+        val conv = conversation ?: return
+
+        viewModelScope.launch {
+            _chatState.value = ChatState.Generating
+
+            val prompt= "Suggerisci 4 frasi brevi che potrei voler dire in questa situazione. " +
+                    "Scrivi una frase per riga, senza numerazione e senza commenti."
+
+            val accumulated = StringBuilder()
+
+            conv.sendMessageAsync(prompt)
+                .catch { error ->
+                    _chatState.value = ChatState.Error(
+                        messageRes = R.string.error_generation,
+                        detail = error.localizedMessage
+                    )
+                }.collect { chunk -> accumulated.append(chunk.toString()) }
+            //prima collezioniamo la risposta e poi la dividiamo
+            publishSuggestions(splitSuggestions(accumulated.toString()))
+
+            if(_chatState.value is ChatState.Generating) {
+                _chatState.value = ChatState.Idle
+            }
+        }
+    }
+
+    private fun requestDemoSuggestions() {
+        viewModelScope.launch {
+            _chatState.value = ChatState.Generating
+            delay(600)
+            publishSuggestions(pickDemoSuggestions())
+            _chatState.value= ChatState.Idle
+        }
+    }
+
+    private fun splitSuggestions(raw: String): List<String> =
+        raw.lines()
+            .map {it.trim().removePrefix("-").removePrefix("*").trim()}
+            .map {it.replace(Regex("^\\d+[.)]\\s*"), "")}
+            .filter { it.length in 3..120 }
+            .take(4)
+
+    private suspend fun publishSuggestions(suggestions: List<String>) {
+        if (suggestions.isEmpty()) return
+        _messages.value = suggestions.map { ChatMessage("model", it) }
+
+        suggestions.forEachIndexed { index, text ->
+            val keyword = extractKeyword(text) ?: return@forEachIndexed
+            val id= PictogramRepository.findPictogram(keyword) ?: return@forEachIndexed
+
+            val list = _messages.value.orEmpty().toMutableList()
+            if (index < list.size) {
+                list[index] = list[index].copy(pictogramId = id)
+                _messages.value = list
+            }
+        }
+    }
+    private fun sendDemoMessage(text: String) {
+        viewModelScope.launch {
+            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
+            _chatState.value = ChatState.Generating
+
+            delay(600)
+
+            val pool = pickDemoSuggestions()
+            val reply = pool.filterNot { it == lastDemoReply }.randomOrNull()
+                ?: pool.random()
+            lastDemoReply = reply
+
+            _messages.value= _messages.value.orEmpty() + ChatMessage("model", reply)
+            _chatState.value= ChatState.Idle
+
+            resolvePictogram(reply)
+        }
+    }
+
+
 
     override fun onCleared() {
         super.onCleared()
