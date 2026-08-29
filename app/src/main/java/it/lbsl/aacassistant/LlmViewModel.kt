@@ -18,7 +18,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.annotation.StringRes
-import it.lbsl.aacassistant.data.PictogramRepository
 
 sealed interface ModelState {
     object Idle : ModelState

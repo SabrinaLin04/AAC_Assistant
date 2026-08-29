@@ -1,4 +1,4 @@
-package it.lbsl.aacassistant.data
+package it.lbsl.aacassistant
 
 import retrofit2.http.GET
 import retrofit2.http.Path

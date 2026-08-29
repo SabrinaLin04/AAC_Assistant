@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import it.lbsl.aacassistant.data.PictogramRepository
 import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
 class ChatAdapter (

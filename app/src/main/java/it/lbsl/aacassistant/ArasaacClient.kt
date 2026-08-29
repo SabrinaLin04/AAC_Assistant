@@ -1,4 +1,4 @@
-package it.lbsl.aacassistant.data
+package it.lbsl.aacassistant
 
 import com.google.firebase.BuildConfig
 import okhttp3.OkHttpClient

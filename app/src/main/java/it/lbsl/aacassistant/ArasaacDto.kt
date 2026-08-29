@@ -1,4 +1,4 @@
-package it.lbsl.aacassistant.data
+package it.lbsl.aacassistant
 
 import com.google.gson.annotations.SerializedName
 
