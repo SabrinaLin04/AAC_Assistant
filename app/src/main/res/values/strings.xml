@@ -1,12 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">AAC Assistant</string>
-    <string name="welcome_subtitle">Comunicazione aumentativa e alternativa assistita</string>
-    <string name="sign_in">Accedi</string>
+
+    <string name="title_suggest">Assistente CAA</string>
+    <string name="title_favorites">Preferiti</string>
+    <string name="title_contexts">Contesti</string>
+    <string name="action_logout">Esci</string>
+
+    <string name="model_loading_title">Caricamento del modello</string>
+    <string name="model_loading_subtitle">Attendere prego</string>
+    <string name="model_copying">Copia del modello in corso…</string>
+    <string name="model_initializing">Inizializzazione del modello…</string>
+    <string name="model_downloading">Download: %1$d%%</string>
+
+    <string name="error_title">Qualcosa è andato storto</string>
+    <string name="error_model_not_found">Modello non trovato sul dispositivo</string>
+    <string name="error_unknown">Errore sconosciuto</string>
+    <string name="error_generation">Errore durante la generazione</string>
+
+    <string name="chat_input_hint">Scrivi qualcosa…</string>
+    <string name="chat_send">Invia</string>
+    <string name="chat_author_user">Tu</string>
+    <string name="chat_author_assistant">Assistente</string>
+    <string name="chat_status_available">Disponibile</string>
+    <string name="chat_status_generating">Generazione in corso…</string>
+    <string name="chat_app_icon">Icona dell\'app</string>
+
+    <string name="favorites_empty_title">Nessun preferito</string>
+    <string name="favorites_empty_hint">Tieni premuto su una risposta dell\'assistente per salvarla qui</string>
+    <string name="favorites_add">Aggiungi un preferito</string>
+    <string name="favorite_new">Nuovo preferito</string>
+    <string name="favorite_edit">Modifica preferito</string>
+    <string name="favorite_hint">Frase da salvare</string>
+    <string name="favorite_added">Aggiunto ai preferiti</string>
+    <string name="favorite_removed">Rimosso dai preferiti</string>
+    <string name="favorite_deleted">Preferito eliminato</string>
+
+    <string name="contexts_empty_title">Nessun contesto</string>
+    <string name="contexts_empty_hint">Aggiungi un contesto per ottenere suggerimenti più adatti alla situazione</string>
+    <string name="contexts_add">Aggiungi un contesto</string>
+    <string name="context_new">Nuovo contesto</string>
+    <string name="context_edit">Modifica contesto</string>
+    <string name="context_label_hint">Nome del contesto (es. A tavola)</string>
+    <string name="context_prompt_hint">Descrizione per l\'assistente</string>
+    <string name="context_deleted">Contesto eliminato</string>
+
+    <string name="action_save">Salva</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="action_undo">Annulla</string>
+    <string name="action_view">Vedi</string>
+
     <string name="sign_in_cancelled">Accesso annullato</string>
+    <string name="no_network">Nessuna connessione internet</string>
     <string name="sign_in_error">Errore di accesso: %1$s</string>
-    <string name="no_network">Nessuna connessione di rete</string>
+    <string name="sign_in">Accedi</string>
+    <string name="welcome_subtitle">Il tuo assistente per la comunicazione aumentativa alternativa</string>
+
+    <string name="logout_confirm_title">Uscire dall\'account?</string>
+    <string name="logout_confirm_message">Dovrai accedere di nuovo per usare l\'app.</string>
+
     <string name="error_load_favorites">Impossibile caricare i preferiti</string>
     <string name="error_toggle_favorite">Operazione non riuscita</string>
     <string name="error_delete_favorite">Impossibile eliminare</string>
     <string name="favorites_empty">Nessun preferito. Premi la stella su una frase per salvarla.</string>
+
+    <string name="favorite_used">Frase selezionata</string>
+    <string name="action_toggle_favorite">Aggiungi ai preferiti</string>
+
+    <plurals name="favorite_usage_count">
+        <item quantity="one">Usata %1$d volta</item>
+        <item quantity="other">Usata %1$d volte</item>
+    </plurals>
+
+    <string name="error_load_contexts">Impossibile caricare i contesti</string>
+    <string name="error_add_context">Impossibile creare il contesto</string>
+    <string name="error_update_context">Impossibile aggiornare il contesto</string>
+    <string name="error_delete_context">Impossibile eliminare il contesto</string>
+    <string name="error_select_context">Impossibile selezionare il contesto</string>
+
+    <string name="contexts_empty">Nessun contesto. Tocca + per crearne uno.</string>
+    <string name="add_context_title">Nuovo contesto</string>
+    <string name="edit_context_title">Modifica contesto</string>
+
+    <string name="context_name_hint">Nome (es. Visita medica)</string>
+    <string name="context_description_hint">Descrizione della situazione per l\'assistente</string>
+
 </resources>

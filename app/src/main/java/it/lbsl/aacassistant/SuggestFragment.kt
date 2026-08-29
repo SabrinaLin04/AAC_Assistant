@@ -8,8 +8,10 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.transition.FragmentTransitionSupport
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
@@ -19,6 +21,7 @@ class SuggestFragment: Fragment() {
     private var _binding: FragmentSuggestBinding? = null
     private val binding get() = _binding!!
     private val viewModel: LlmViewModel by activityViewModels()
+    private val favoritesViewModel: FavoritesViewModel by activityViewModels()
     private lateinit var chatAdapter: ChatAdapter
 
     override fun onCreateView(
@@ -50,7 +53,20 @@ class SuggestFragment: Fragment() {
     }
 
     private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter()
+        chatAdapter = ChatAdapter(
+            isFavorite = { text -> favoritesViewModel.isFavorite(text)},
+            onToggleFavorite = { text ->
+                val wasSaved = favoritesViewModel.isFavorite(text)
+                favoritesViewModel.toggleFavorite(text)
+                Snackbar.make(
+                    binding.root,
+                    if (wasSaved) R.string.favorite_removed else R.string.favorite_added,
+                    Snackbar.LENGTH_SHORT
+                ).setAction(R.string.action_view) {
+                    findNavController().navigate(R.id.favoritesFragment)
+                }.show()
+            }
+        )
         val layoutManager = LinearLayoutManager(requireContext())
         layoutManager.stackFromEnd = true
         binding.recyclerView.layoutManager = layoutManager
@@ -99,11 +115,25 @@ class SuggestFragment: Fragment() {
         viewModel.modelState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ModelState.Idle -> { }
-                is ModelState.Initializing -> showLoading(state.message)
-                is ModelState.Downloading -> showLoading("Downloading: ${state.percent}%")
+                is ModelState.Initializing -> showLoading(getString(state.messageRes))
+                is ModelState.Downloading -> showLoading(getString(R.string.model_downloading, state.percent))
                 is ModelState.Ready -> showChat()
-                is ModelState.Error -> showError(state.cause)
+                is ModelState.Error -> showError(
+                    buildString {
+                        append(getString(state.messageRes))
+                        state.detail?.let { append("\n").append(it)}
+                    }
+                )
             }
+        }
+
+        favoritesViewModel.favorites.observe(viewLifecycleOwner){
+            chatAdapter.refreshStars()
+        }
+        favoritesViewModel.errorMessage.observe(viewLifecycleOwner){ resId ->
+            resId ?: return@observe
+            Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_SHORT).show()
+            favoritesViewModel.clearError()
         }
 
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
@@ -121,10 +151,10 @@ class SuggestFragment: Fragment() {
             updateSendButtonTint(enabled)
 
             if (isGenerating) {
-                binding.statusIndicator.text = "Generating..."
+                binding.statusIndicator.text = getString(R.string.chat_status_generating)
                 binding.statusIndicator.setTextColor(Color.parseColor("#FF9800"))
             } else {
-                binding.statusIndicator.text = "Available"
+                binding.statusIndicator.text = getString(R.string.chat_status_available)
                 binding.statusIndicator.setTextColor(Color.parseColor("#4CAF50"))
             }
         }

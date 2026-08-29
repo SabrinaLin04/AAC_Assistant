@@ -2,6 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <data>
+        <import type="android.view.View" />
         <variable
             name="message"
             type="it.lbsl.aacassistant.ChatMessage" />
@@ -17,13 +18,20 @@
 
         <TextView
             android:id="@+id/authorLabel"
-            android:text='@{message.author.equals("user") ? "Tu" : "Assistente"}'
+            android:text='@{message.author.equals("user") ? @string/chat_author_user : @string/chat_author_assistant}'
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingBottom="2dp"
             android:paddingHorizontal="6dp"
             android:textColor="#999999"
             android:textSize="11sp" />
+
+        <LinearLayout
+            android:id="@+id/bubbleRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
         <TextView
             android:id="@+id/messageText"
@@ -35,6 +43,19 @@
             android:paddingVertical="10dp"
             android:lineSpacingExtra="2dp"
             android:textSize="15sp" />
+
+            <ImageButton
+                android:id="@+id/favoriteStar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:src="@android:drawable/btn_star_big_off"
+                android:contentDescription="@string/action_toggle_favorite"
+                android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}' />
+
+        </LinearLayout>
 
     </LinearLayout>
 
