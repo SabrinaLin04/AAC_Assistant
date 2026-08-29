@@ -7,6 +7,8 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import it.lbsl.aacassistant.data.PictogramRepository
 import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
 class ChatAdapter (
@@ -63,6 +65,21 @@ class ChatAdapter (
             }
             holder.binding.messageText.background = drawable
             holder.binding.messageText.setTextColor(Color.parseColor("#1A1A1A"))
+
+            val picto = holder.binding.pictogram
+
+            if (message.pictogramId != null) {
+                picto.visibility = View.VISIBLE
+                picto.load(PictogramRepository.imageUrl(message.pictogramId)) {
+                    crossfade(true)
+                    placeholder(R.drawable.ic_pictogram_placeholder)
+                    error(R.drawable.ic_pictogram_placeholder)
+                }
+                picto.contentDescription = message.text
+            } else {
+                picto.visibility = View.GONE
+                picto.setImageDrawable(null)
+            }
         }
 
         val star = holder.binding.favoriteStar

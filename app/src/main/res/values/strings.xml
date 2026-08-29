@@ -86,4 +86,21 @@
     <string name="context_name_hint">Nome (es. Visita medica)</string>
     <string name="context_description_hint">Descrizione della situazione per l\'assistente</string>
 
+    <string name="title_credits">Crediti e licenze</string>
+
+    <string name="credits_pictograms_title">Pittogrammi</string>
+    <string name="credits_arasaac">The pictographic symbols used are the property of the Government of Aragón and have been created by Sergio Palao for ARASAAC (http://www.arasaac.org), that distributes them under Creative Commons License BY-NC-SA</string>
+    <string name="credits_arasaac_link">https://arasaac.org</string>
+
+    <string name="credits_model_title">Modello linguistico</string>
+    <string name="credits_gemma">Le frasi sono generate localmente sul dispositivo da Gemma 3, un modello di Google, utilizzato secondo i Gemma Terms of Use.</string>
+    <string name="credits_gemma_link">https://ai.google.dev/gemma/terms</string>
+
+    <string name="credits_privacy_title">Privacy</string>
+    <string name="credits_privacy">Le frasi generate durante l\'uso non lasciano mai il dispositivo. Solo i preferiti salvati esplicitamente vengono sincronizzati sul tuo account.</string>
+
+    <string name="credits_version">Versione %1$s</string>
+    <string name="credits_arasaac_logo_desc">Logo ARASAAC</string>
+    <string name="credits_arasaac_license_link">Licenza: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it</string>
+
 </resources>

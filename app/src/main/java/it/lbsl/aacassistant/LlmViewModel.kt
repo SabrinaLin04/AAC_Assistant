@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.annotation.StringRes
+import it.lbsl.aacassistant.data.PictogramRepository
 
 sealed interface ModelState {
     object Idle : ModelState
@@ -35,7 +36,8 @@ sealed interface ChatState {
 
 data class ChatMessage(
     val author: String,
-    val text: String
+    val text: String,
+    val pictogramId: Int? = null
 )
 
 
@@ -145,6 +147,18 @@ class LlmViewModel : ViewModel() {
                     )
                     _messages.value = updatedList
                 }
+
+            val finalText = accumulated.toString()
+            val firstWord = finalText
+                .split(" ", ",",".")
+                .firstOrNull{ it.length > 3 } //salto articoli e preposizioni (demo), placeholder per la lemmatizzazione
+            val pictogramId = firstWord?.let { PictogramRepository.findPictogram(it) }
+
+            if (pictogramId!=null) {
+                val list = _messages.value.orEmpty().toMutableList()
+                list[list.lastIndex] = list.last().copy(pictogramId= pictogramId)
+                _messages.value = list
+            }
 
             if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
