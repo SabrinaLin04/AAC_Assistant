@@ -2,6 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <data>
+        <import type="android.view.View" />
         <variable
             name="message"
             type="it.lbsl.aacassistant.ChatMessage" />
@@ -51,8 +52,10 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="12dp"
                 android:src="@android:drawable/btn_star_big_off"
-                android:contentDescription="@string/favorite_added"
-                android:visibility="gone" />
+                android:contentDescription="@string/action_toggle_favorite"
+                android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}' />
+
+        </LinearLayout>
 
     </LinearLayout>
 

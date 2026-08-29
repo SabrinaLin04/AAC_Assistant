@@ -81,7 +81,7 @@ class FavoritesFragment: Fragment() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val favorite = adapter.itemAt(viewHolder.bindingAdapterPosition)
-                viewModel.deleteFavorites(favorite.id)
+                viewModel.deleteFavorite(favorite.id)
 
                 Snackbar.make(binding.root, R.string.favorite_deleted, Snackbar.LENGTH_LONG).setAction(R.string.action_undo)
                 {viewModel.toggleFavorite(favorite.text, favorite.pictogramIds)}.show()
