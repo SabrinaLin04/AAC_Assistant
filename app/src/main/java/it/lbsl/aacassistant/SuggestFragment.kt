@@ -12,6 +12,7 @@ import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.transition.FragmentTransitionSupport
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
@@ -22,6 +23,8 @@ class SuggestFragment: Fragment() {
     private val binding get() = _binding!!
     private val viewModel: LlmViewModel by activityViewModels()
     private val favoritesViewModel: FavoritesViewModel by activityViewModels()
+
+    private val contextsViewModel: ContextsViewModel by activityViewModels()
     private lateinit var chatAdapter: ChatAdapter
 
     override fun onCreateView(
@@ -40,6 +43,7 @@ class SuggestFragment: Fragment() {
 
         setupRecyclerView()
         setupInputBar()
+        setupContextBar()
         observeViewModel()
 
         if (viewModel.modelState.value is ModelState.Idle){
@@ -105,6 +109,19 @@ class SuggestFragment: Fragment() {
         })
     }
 
+    private fun setupContextBar() {
+        binding.contextBar.setOnClickListener {
+            findNavController().navigate(
+                R.id.contextsFragment,
+                null,
+                navOptions {
+                    launchSingleTop = true
+                    popUpTo(R.id.suggestFragment) { inclusive = false }
+                }
+            )
+        }
+    }
+
     private fun updateSendButtonTint(enabled: Boolean) {
         val color = if (enabled) Color.WHITE else Color.parseColor("#BBBBBB")
         binding.sendButton.setColorFilter(color, PorterDuff.Mode.SRC_IN)
@@ -134,6 +151,11 @@ class SuggestFragment: Fragment() {
             resId ?: return@observe
             Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_SHORT).show()
             favoritesViewModel.clearError()
+        }
+
+        contextsViewModel.activeContext.observe(viewLifecycleOwner) { ctx ->
+            viewModel.setContext(ctx?.description)
+            binding.contextLabel.text = ctx?.name ?: getString(R.string.context_none)
         }
 
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
