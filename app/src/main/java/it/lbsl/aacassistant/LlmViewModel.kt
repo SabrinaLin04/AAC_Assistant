@@ -55,6 +55,8 @@ class LlmViewModel : ViewModel() {
     private var engine: Engine? = null
     private var conversation: Conversation? = null
 
+    private var contextDescription: String? = null
+
     companion object {
         private const val MODEL_FILENAME = "gemma3-1b-it-int4.litertlm"
     }
@@ -88,6 +90,33 @@ class LlmViewModel : ViewModel() {
         }
     }
 
+    private fun buildSystemPrompt(): String {
+        val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
+                "Suggerisci brevi frasi in prima persona che l'utente potrebbe voler dire. " +
+                "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano."
+
+        return contextDescription
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "$base La situazione attuale è: $it" }
+            ?: base
+    }
+
+    private fun createConversation() {
+        val eng = engine ?: return
+
+        conversation?.close()
+
+        val convConfig = ConversationConfig(
+            systemInstruction = Contents.of(buildSystemPrompt()),
+            samplerConfig = SamplerConfig(
+                topK = 20,
+                topP = 0.95,
+                temperature = 0.7
+            )
+        )
+        conversation = eng.createConversation(convConfig)
+    }
+
     private suspend fun loadEngine(modelPath: String, context: Context) {
         _modelState.value = ModelState.Initializing(R.string.model_initializing)
 
@@ -103,20 +132,20 @@ class LlmViewModel : ViewModel() {
         }
 
         engine = loadedEngine
-
-        val convConfig = ConversationConfig(
-            systemInstruction = Contents.of(
-                "You are a helpful assistant. Answer in Italian, clearly and concisely."
-            ),
-            samplerConfig = SamplerConfig(
-                topK = 20,
-                topP = 0.95,
-                temperature = 0.7
-            )
-        )
-        conversation = loadedEngine.createConversation(convConfig)
-
+        createConversation()
         _modelState.value = ModelState.Ready
+    }
+
+    fun setContext(description: String?) {
+        if (description == contextDescription) return
+
+        contextDescription = description
+
+        if (engine != null) {
+            createConversation()
+            _messages.value = emptyList()
+            _chatState.value = ChatState.Idle
+        }
     }
 
     fun sendMessage(text: String) {

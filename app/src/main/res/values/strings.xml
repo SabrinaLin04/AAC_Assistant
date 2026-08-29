@@ -103,4 +103,7 @@
     <string name="credits_arasaac_logo_desc">Logo ARASAAC</string>
     <string name="credits_arasaac_license_link">Licenza: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it</string>
 
+    <string name="context_active">ATTIVO</string>
+    <string name="context_selected">Contesto attivo: %1$s</string>
+    <string name="context_none">Nessun contesto</string>
 </resources>

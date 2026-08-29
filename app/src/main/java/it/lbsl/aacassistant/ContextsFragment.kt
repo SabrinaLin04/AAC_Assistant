@@ -10,7 +10,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentContextsBinding
@@ -44,10 +43,17 @@ class ContextsFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = ContextsAdapter { userContext ->
-            showContextDialog(userContext)
-        }
-        binding.contextsRecycler.layoutManager = LinearLayoutManager(requireContext())
+        adapter = ContextsAdapter(
+            onSelect = { userContext ->
+                viewModel.selectContext(userContext.id)
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.context_selected, userContext.name),
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            },
+            onEdit = { userContext -> showContextDialog(userContext)}
+        )
         binding.contextsRecycler.adapter = adapter
     }
 
@@ -60,6 +66,9 @@ class ContextsFragment : Fragment() {
     private fun observeViewModel() {
         viewModel.contexts.observe(viewLifecycleOwner) { list ->
             adapter.submitList(list)
+        }
+        viewModel.activeContextId.observe(viewLifecycleOwner) { id ->
+            adapter.setActiveId(id)
         }
         viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
             binding.progressBar.isVisible = loading
@@ -119,8 +128,8 @@ class ContextsFragment : Fragment() {
         val descInput = dialogView.findViewById<EditText>(R.id.editContextDescription)
 
         if (isEditing) {
-            nameInput.setText(contextToEdit?.name)
-            descInput.setText(contextToEdit?.description)
+            nameInput.setText(contextToEdit.name)
+            descInput.setText(contextToEdit.description)
         }
 
         val titleRes = if (isEditing) R.string.edit_context_title else R.string.add_context_title
@@ -134,7 +143,7 @@ class ContextsFragment : Fragment() {
 
                 if (name.isNotEmpty()) {
                     if (isEditing) {
-                        viewModel.updateContext(contextToEdit!!.id, name, desc)
+                        viewModel.updateContext(contextToEdit.id, name, desc)
                     } else {
                         viewModel.addContext(name, desc)
                     }
