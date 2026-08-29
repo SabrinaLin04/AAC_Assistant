@@ -12,7 +12,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E0E0E0" />
+        android:background="?attr/colorSurfaceVariant" />
 
     <LinearLayout
         android:id="@+id/logoutRow"
@@ -31,7 +31,7 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_lock_power_off"
             android:contentDescription="@null"
-            app:tint="#D32F2F"
+            app:tint="?attr/colorError"
             xmlns:app="http://schemas.android.com/apk/res-auto" />
 
         <TextView
@@ -39,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:text="@string/action_logout"
-            android:textColor="#D32F2F"
+            android:textColor="?attr/colorError"
             android:textSize="14sp" />
 
     </LinearLayout>

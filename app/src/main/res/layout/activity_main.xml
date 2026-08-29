@@ -14,7 +14,7 @@
             android:id="@+id/main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#F5F5F5">
+            android:background="?attr/colorSurfaceVariant">
 
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
@@ -46,12 +46,73 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_gravity="start"
-            android:fitsSystemWindows="true"
-            app:headerLayout="@layout/nav_header"
-            app:menu="@menu/drawer_menu">
+            android:fitsSystemWindows="true">
 
-            <include layout="@layout/drawer_content" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
+                <!-- Zona scorrevole: header + voci -->
+                <androidx.core.widget.NestedScrollView
+                    android:id="@+id/drawerScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <include layout="@layout/nav_header" />
+
+                        <com.google.android.material.navigation.NavigationView
+                            android:id="@+id/drawerMenuView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:menu="@menu/drawer_menu" />
+
+                    </LinearLayout>
+                </androidx.core.widget.NestedScrollView>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutline" />
+
+                <!-- Zona fissa: logout -->
+                <LinearLayout
+                    android:id="@+id/logoutRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="20dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_lock_power_off"
+                        android:contentDescription="@null"
+                        app:tint="?attr/colorError" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="32dp"
+                        android:text="@string/action_logout"
+                        android:textColor="?attr/colorError"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
         </com.google.android.material.navigation.NavigationView>
 
     </androidx.drawerlayout.widget.DrawerLayout>

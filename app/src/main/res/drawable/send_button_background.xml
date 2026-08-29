@@ -3,13 +3,13 @@
     <!-- Disabled state -->
     <item android:state_enabled="false">
         <shape android:shape="oval">
-            <solid android:color="#E0E0E0" />
+            <solid android:color="?attr/colorSurfaceVariant" />
         </shape>
     </item>
     <!-- Enabled state -->
     <item>
         <shape android:shape="oval">
-            <solid android:color="#1976D2" />
+            <solid android:color="?attr/colorPrimary" />
         </shape>
     </item>
 </selector>

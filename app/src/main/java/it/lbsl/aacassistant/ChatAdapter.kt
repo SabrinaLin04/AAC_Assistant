@@ -1,11 +1,12 @@
 package it.lbsl.aacassistant
 
-import android.graphics.Color
 import android.view.View
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
@@ -38,11 +39,14 @@ class ChatAdapter (
 
         holder.binding.messageText.text = message.text
 
-        holder.binding.messageContainer.gravity = if (isUser) Gravity.END else Gravity.START
+        val params = holder.binding.bubbleColumn.layoutParams
+                as ConstraintLayout.LayoutParams
+        params.horizontalBias = if (isUser) 1f else 0f
+        holder.binding.bubbleColumn.layoutParams = params
 
         if (isUser) {
             val drawable = GradientDrawable().apply {
-                setColor(Color.parseColor("#1976D2"))
+                setColor(ContextCompat.getColor(holder.itemView.context, R.color.bubble_user))
                 cornerRadii = floatArrayOf(
                     36f, 36f,
                     36f, 36f,
@@ -51,10 +55,10 @@ class ChatAdapter (
                 )
             }
             holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(Color.WHITE)
+            holder.binding.messageText.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.m1_primary))
         } else {
             val drawable = GradientDrawable().apply {
-                setColor(Color.WHITE)
+                setColor(ContextCompat.getColor(holder.itemView.context, R.color.bubble_assistant))
                 cornerRadii = floatArrayOf(
                     4f, 4f,
                     36f, 36f,
@@ -63,7 +67,7 @@ class ChatAdapter (
                 )
             }
             holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(Color.parseColor("#1A1A1A"))
+            holder.binding.messageText.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.m1_surface))
 
             val picto = holder.binding.pictogram
 

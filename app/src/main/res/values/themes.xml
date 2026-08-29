@@ -1,6 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.AACAssistant" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/m_primary</item>
+        <item name="colorOnPrimary">@color/m1_primary</item>
+        <item name="colorPrimaryContainer">@color/m_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/m1_primary_container</item>
+
+        <item name="colorSecondary">@color/m_secondary</item>
+        <item name="colorOnSecondary">@color/m1_secondary</item>
+
+        <item name="colorSurface">@color/m_surface</item>
+        <item name="colorOnSurface">@color/m1_surface</item>
+        <item name="colorSurfaceVariant">@color/m_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m1_surface_variant</item>
+
+        <item name="android:colorBackground">@color/m_background</item>
+        <item name="colorOutline">@color/m_outline</item>
+
+        <item name="colorError">@color/m_error</item>
+        <item name="colorOnError">@color/m1_error</item>
+
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
