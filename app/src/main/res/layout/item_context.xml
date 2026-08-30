@@ -16,7 +16,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/context_active"
-            android:textColor="#4CAF50"
+            android:textColor="@color/status_available"
             android:textSize="11sp"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
@@ -26,11 +26,9 @@
             android:id="@+id/contextName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            app:layout_constraintStart_toStartOf="parent"
+            android:textAppearance="@style/TextAppearance.App.Title"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Visita medica" />
 
@@ -41,12 +39,11 @@
             android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="3"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/contextName"
+            android:textAppearance="@style/TextAppearance.App.Caption"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/contextName"
             tools:text="L'utente è in ambulatorio con un medico e potrebbe dover descrivere sintomi o dolore." />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

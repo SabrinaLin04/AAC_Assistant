@@ -7,7 +7,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#F5F5F5"
+        android:background="?attr/colorSurfaceVariant"
         android:fillViewport="true">
 
         <LinearLayout
@@ -41,10 +41,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/credits_pictograms_title"
-                        android:textColor="#1A1A1A"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.App.Title"
+                        android:text="@string/credits_pictograms_title" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -52,19 +50,18 @@
                         android:layout_marginTop="8dp"
                         android:autoLink="web"
                         android:lineSpacingExtra="3dp"
-                        android:text="@string/credits_arasaac"
-                        android:textColor="#555555"
-                        android:textColorLink="#1976D2"
-                        android:textSize="14sp" />
+                        android:textAppearance="@style/TextAppearance.App.Body"
+                        android:textColorLink="?attr/colorPrimary"
+                        android:text="@string/credits_arasaac" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:autoLink="web"
-                        android:text="@string/credits_arasaac_license_link"
-                        android:textColorLink="#1976D2"
-                        android:textSize="13sp" />
+                        android:textAppearance="@style/TextAppearance.App.Caption"
+                        android:textColorLink="?attr/colorPrimary"
+                        android:text="@string/credits_arasaac_license_link" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -85,10 +82,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/credits_model_title"
-                        android:textColor="#1A1A1A"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.App.Title"
+                        android:text="@string/credits_model_title" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -96,10 +91,9 @@
                         android:layout_marginTop="8dp"
                         android:autoLink="web"
                         android:lineSpacingExtra="3dp"
-                        android:text="@string/credits_gemma"
-                        android:textColor="#555555"
-                        android:textColorLink="#1976D2"
-                        android:textSize="14sp" />
+                        android:textAppearance="@style/TextAppearance.App.Body"
+                        android:textColorLink="?attr/colorPrimary"
+                        android:text="@string/credits_gemma" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -120,19 +114,16 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/credits_privacy_title"
-                        android:textColor="#1A1A1A"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.App.Title"
+                        android:text="@string/credits_privacy_title" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:lineSpacingExtra="3dp"
-                        android:text="@string/credits_privacy"
-                        android:textColor="#555555"
-                        android:textSize="14sp" />
+                        android:textAppearance="@style/TextAppearance.App.Body"
+                        android:text="@string/credits_privacy" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -144,8 +135,7 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
                 android:gravity="center"
-                android:textColor="#AAAAAA"
-                android:textSize="12sp" />
+                android:textAppearance="@style/TextAppearance.App.Caption" />
 
         </LinearLayout>
     </ScrollView>

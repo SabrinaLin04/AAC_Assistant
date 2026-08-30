@@ -18,32 +18,37 @@
 
         <TextView
             android:id="@+id/authorLabel"
-            android:text='@{message.author.equals("user") ? @string/chat_author_user : @string/chat_author_assistant}'
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="2dp"
             android:paddingHorizontal="6dp"
-            android:textColor="#999999"
-            android:textSize="11sp" />
+            android:paddingBottom="2dp"
+            android:textAppearance="@style/TextAppearance.App.Caption"
+            android:text='@{message.author.equals("user") ? @string/chat_author_user : @string/chat_author_assistant}' />
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/bubbleRow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <LinearLayout
                 android:id="@+id/bubbleColumn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center_horizontal">
+                app:layout_constrainedWidth="true"
+                app:layout_constraintWidth_max="wrap"
+                app:layout_constraintHorizontal_bias="0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/favoriteStar"
+                app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
                     android:id="@+id/pictogram"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxWidth="@dimen/pictogram_max_size"
+                    android:maxHeight="@dimen/pictogram_max_size"
+                    android:adjustViewBounds="true"
                     android:layout_marginBottom="4dp"
                     android:scaleType="fitCenter"
                     android:visibility="gone"
@@ -51,17 +56,15 @@
 
                 <TextView
                     android:id="@+id/messageText"
-                    android:text="@{message.text}"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:maxWidth="280dp"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="10dp"
                     android:lineSpacingExtra="2dp"
-                    android:textSize="15sp" />
+                    android:textAppearance="@style/TextAppearance.App.Message"
+                    android:text="@{message.text}" />
 
             </LinearLayout>
-
 
             <ImageButton
                 android:id="@+id/favoriteStar"
@@ -72,10 +75,12 @@
                 android:padding="12dp"
                 android:src="@android:drawable/btn_star_big_off"
                 android:contentDescription="@string/action_toggle_favorite"
-                android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}' />
+                android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}'
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/bubbleColumn"
+                app:layout_constraintBottom_toBottomOf="@id/bubbleColumn" />
 
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </LinearLayout>
-
 </layout>

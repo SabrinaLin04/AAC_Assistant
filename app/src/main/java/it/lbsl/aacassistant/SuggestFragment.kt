@@ -8,6 +8,10 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -48,6 +52,10 @@ class SuggestFragment: Fragment() {
 
         if (viewModel.modelState.value is ModelState.Idle){
             viewModel.getModel(requireContext().applicationContext)
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            insets
         }
     }
 
@@ -129,7 +137,7 @@ class SuggestFragment: Fragment() {
     }
 
     private fun updateSendButtonTint(enabled: Boolean) {
-        val color = if (enabled) Color.WHITE else Color.parseColor("#BBBBBB")
+        val color = if (enabled) Color.WHITE else ContextCompat.getColor(requireContext(), R.color.m_outline)
         binding.sendButton.setColorFilter(color, PorterDuff.Mode.SRC_IN)
     }
 
@@ -182,10 +190,10 @@ class SuggestFragment: Fragment() {
 
             if (isGenerating) {
                 binding.statusIndicator.text = getString(R.string.chat_status_generating)
-                binding.statusIndicator.setTextColor(Color.parseColor("#FF9800"))
+                binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_generating))
             } else {
                 binding.statusIndicator.text = getString(R.string.chat_status_available)
-                binding.statusIndicator.setTextColor(Color.parseColor("#4CAF50"))
+                binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_available))
             }
 
             if (state is ChatState.Error) {
@@ -215,4 +223,7 @@ class SuggestFragment: Fragment() {
         binding.chatGroup.visibility = View.GONE
         binding.errorMessage.text = message
     }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 }

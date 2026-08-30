@@ -1,5 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    //m = ruoli materiali
+    <color name="m_primary">#6750A4</color>
+    <color name="m1_primary">#FFFFFF</color>
+    <color name="m_primary_container">#EADDFF</color>
+    <color name="m1_primary_container">#21005D</color>
+
+    <color name="m_secondary">#625B71</color>
+    <color name="m1_secondary">#FFFFFF</color>
+
+    <color name="m_surface">#FFFBFE</color>
+    <color name="m1_surface">#1C1B1F</color>
+    <color name="m_surface_variant">#E7E0EC</color>
+    <color name="m1_surface_variant">#49454F</color>
+
+    <color name="m_background">#F5F3F7</color>
+    <color name="m_outline">#79747E</color>
+
+    <color name="m_error">#B3261E</color>
+    <color name="m1_error">#FFFFFF</color>
+
+    <color name="status_available">#2E7D32</color>
+    <color name="status_generating">#E65100</color>
+    <color name="bubble_user">#6750A4</color>
+    <color name="bubble_assistant">#FFFFFF</color>
 </resources>

@@ -1,5 +1,6 @@
 package it.lbsl.aacassistant
 
+import androidx.activity.enableEdgeToEdge
 import androidx.core.view.updatePadding
 import android.content.Intent
 import android.os.Bundle
@@ -31,7 +32,6 @@ class MainActivity : AppCompatActivity() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         binding.lifecycleOwner = this
 
-        setupWindowInsets()
         setSupportActionBar(binding.toolbar)
         setupNavigation()
 
@@ -44,22 +44,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-        private fun setupWindowInsets() {
-            ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-
-                binding.toolbar.updatePadding(top = systemBars.top)
-                binding.navHostFragment.updatePadding(
-                    left = systemBars.left,
-                    right = systemBars.right,
-                    bottom = maxOf(systemBars.bottom, ime.bottom)
-                )
-                insets
-            }
-        }
-
-
     private fun setupNavigation() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -67,16 +51,14 @@ class MainActivity : AppCompatActivity() {
 
         appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
-        binding.navigationView.setupWithNavController(navController)
+        binding.drawerMenuView.setupWithNavController(navController)
         setupLogoutRow()
     }
     private fun setupLogoutRow() {
-        binding.navigationView
-            .findViewById<View>(R.id.logoutRow)
-            .setOnClickListener {
-                binding.drawerLayout.closeDrawer(GravityCompat.START)
-                confirmLogout()
-            }
+        binding.logoutRow.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            confirmLogout()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean =

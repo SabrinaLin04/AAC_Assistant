@@ -6,7 +6,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#F5F5F5">
+        android:background="?attr/colorSurfaceVariant">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/favoritesRecycler"
@@ -23,7 +23,7 @@
             android:id="@+id/progressBar"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:indeterminateTint="#1976D2"
+            android:indeterminateTint="?attr/colorPrimary"
             android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -36,9 +36,8 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="32dp"
+            android:textAppearance="@style/TextAppearance.App.Caption"
             android:text="@string/favorites_empty"
-            android:textColor="#999999"
-            android:textSize="15sp"
             android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
