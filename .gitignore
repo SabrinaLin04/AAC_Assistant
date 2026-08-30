@@ -13,3 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio - preferenze locali
+.idea/deploymentTargetSelector.xml
+.idea/deploymentTargetDropDown.xml
+.idea/workspace.xml
+.idea/misc.xml
+.gradle/
+build/
+local.properties
