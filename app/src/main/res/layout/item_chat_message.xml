@@ -32,12 +32,11 @@
 
             <LinearLayout
                 android:id="@+id/bubbleColumn"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center_horizontal"
-                app:layout_constraintWidth_percent="@dimen/bubble_width_percent"
-                app:layout_constraintWidth_default="percent"
+                app:layout_constrainedWidth="true"
+                app:layout_constraintWidth_max="wrap"
                 app:layout_constraintHorizontal_bias="0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/favoriteStar"
