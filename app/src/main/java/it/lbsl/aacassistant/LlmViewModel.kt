@@ -91,6 +91,8 @@ class LlmViewModel : ViewModel() {
 
     fun getModel(context: Context) {
         viewModelScope.launch {
+            PictogramRepository.loadCoreIndex(context)
+
             try {
                 val modelFile = File(context.filesDir, MODEL_FILENAME)
 
@@ -110,10 +112,6 @@ class LlmViewModel : ViewModel() {
                 loadEngine(modelFile.absolutePath, context)
 
             } catch (e: Exception) {
-                /*_modelState.value = ModelState.Error(
-                    messageRes = R.string.error_unknown,
-                    detail = e.localizedMessage
-                    )*/
                 _modelState.value = ModelState.DemoMode
             }
         }
