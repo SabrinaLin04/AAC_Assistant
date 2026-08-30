@@ -25,6 +25,18 @@ class FirestoreRepository {
         userDoc().set(profile, SetOptions.merge()).await()
     }
 
+    suspend fun defaultContexts() {
+        if (contexts().limit(1).get().await().isEmpty.not()) return
+
+        val defaults = listOf(
+            "Pasto" to "L'utente è a tavola durante il pasto e potrebbe voler chiedere cibo, bevande o dire che ha finito.",
+            "Visita medica" to "L'utente è dal medico e potrebbe dover descrivere dolore, rispondere a domande sui sintomi o chiedere spiegazioni.",
+            "Scuola" to "L'utente è a scuola e potrebbe voler chiedere aiuto, dire che non ha capito o comunicare un bisogno.",
+            "Casa" to "L'utente è a casa e potrebbe voler esprimere desideri quotidiani, stanchezza o richieste di attività."
+        )
+
+        defaults.forEach { (name, description)  -> addContext(name, description)}
+    }
     suspend fun addFavorite(text: String, pictogramIds: List<Int> = emptyList()) : String {
         return favorites().add(Favorite(text=text, pictogramIds = pictogramIds)).await().id
     }
