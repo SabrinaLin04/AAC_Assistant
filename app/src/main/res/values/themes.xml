@@ -1,9 +1,41 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.AACAssistant" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/m_primary</item>
+        <item name="colorOnPrimary">@color/m1_primary</item>
+        <item name="colorPrimaryContainer">@color/m_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/m1_primary_container</item>
+
+        <item name="colorSecondary">@color/m_secondary</item>
+        <item name="colorOnSecondary">@color/m1_secondary</item>
+
+        <item name="colorSurface">@color/m_surface</item>
+        <item name="colorOnSurface">@color/m1_surface</item>
+        <item name="colorSurfaceVariant">@color/m_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m1_surface_variant</item>
+
+        <item name="android:colorBackground">@color/m_background</item>
+        <item name="colorOutline">@color/m_outline</item>
+
+        <item name="colorError">@color/m_error</item>
+        <item name="colorOnError">@color/m1_error</item>
+
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+
+    </style>
+
+    <style name="ThemeOverlay.AACAssistant.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="dialogCornerRadius">28dp</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/Dialog.Title</item>
+        <item name="android:background">?attr/colorSurface</item>
+    </style>
+
+    <style name="Dialog.Title" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">20sp</item>
     </style>
 
     <style name="Theme.AACAssistant" parent="Base.Theme.AACAssistant" />

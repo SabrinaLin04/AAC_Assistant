@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextAppearance.App.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.App.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.App.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="TextAppearance.App.Message" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="Theme.AACAssistant.FirebaseUI" parent="FirebaseUI">
+        <item name="colorPrimary">@color/m_primary</item>
+        <item name="colorPrimaryDark">@color/m_primary</item>
+        <item name="colorAccent">@color/m_primary</item>
+
+        <item name="colorButtonNormal">@color/m_primary</item>
+        <item name="buttonTint">@color/m_primary</item>
+
+        <item name="android:windowBackground">@color/m_surface</item>
+        <item name="android:textColorPrimary">@color/m1_surface</item>
+        <item name="android:textColorSecondary">@color/m1_surface_variant</item>
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
