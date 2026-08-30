@@ -26,12 +26,10 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:textColor="#1A1A1A"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintStart_toEndOf="@id/favoritePictogram"
             android:textAppearance="@style/TextAppearance.App.Body"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/usageCount"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView

@@ -79,7 +79,7 @@ class SuggestFragment: Fragment() {
             isFavorite = { text -> favoritesViewModel.isFavorite(text)},
             onToggleFavorite = { text, pictogramId ->
                 val wasSaved = favoritesViewModel.isFavorite(text)
-                favoritesViewModel.toggleFavorite(text, pictogramId)
+                favoritesViewModel.toggleFavorite(text, listOfNotNull(pictogramId))
                 Snackbar.make(
                     binding.root,
                     if (wasSaved) R.string.favorite_removed else R.string.favorite_added,

@@ -37,14 +37,14 @@ class FavoritesViewModel : ViewModel() {
         }
     }
 
-    fun toggleFavorite(text: String, pictogramId: Int? = null) {
+    fun toggleFavorite(text: String, pictogramIds: List<Int> = emptyList()) {
         viewModelScope.launch {
             try {
                 val existing = _favorites.value?.firstOrNull { it.text == text }
                 if (existing != null) {
                     repository.deleteFavorite(existing.id)
                 } else {
-                    repository.addFavorite(text, listOfNotNull(pictogramId))
+                    repository.addFavorite(text, pictogramIds)
                 }
                 loadFavorites()
             } catch (e: Exception) {
