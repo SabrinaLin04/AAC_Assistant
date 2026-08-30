@@ -12,7 +12,7 @@ import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
 class ChatAdapter (
     private val isFavorite: (String) -> Boolean = { false },
-    private val onToggleFavorite: (String) -> Unit = {}
+    private val onToggleFavorite: (String, Int?) -> Unit = { _, _ -> }
 ) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
     private var messageList: List<ChatMessage> = emptyList()
 
@@ -97,7 +97,7 @@ class ChatAdapter (
             star.contentDescription = context.getString(
                 if (saved) R.string.favorite_deleted else R.string.favorite_added
             )
-            star.setOnClickListener { onToggleFavorite(message.text) }
+            star.setOnClickListener { onToggleFavorite(message.text, message.pictogramId) }
         }
     }
 
@@ -111,7 +111,7 @@ class ChatAdapter (
         when {
             //tutta la lista viene sostituita
             newMessages.size == old.size && newMessages != old && newMessages.size > 1 -> notifyDataSetChanged()
-            newMessages.size -old.size > 1 -> notifyItemInserted(newMessages.lastIndex)
+            newMessages.size -old.size > 1 -> notifyDataSetChanged()
             newMessages.size > old.size -> notifyItemChanged(newMessages.lastIndex)
             newMessages.isNotEmpty() -> notifyItemChanged(newMessages.lastIndex)
             else -> notifyDataSetChanged()

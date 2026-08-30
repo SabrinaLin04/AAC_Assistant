@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build()
             ).build()
-        
+
         WorkManager.getInstance(this)
             .enqueueUniqueWork("pictogram_prefetch", ExistingWorkPolicy.KEEP, prefetch)
     }
