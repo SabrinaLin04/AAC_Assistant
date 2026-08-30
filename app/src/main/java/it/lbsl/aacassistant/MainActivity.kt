@@ -62,8 +62,7 @@ class MainActivity : AppCompatActivity() {
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build()
             ).build()
-
-        // KEEP: the work must not restart on every launch or rotation.
+        
         WorkManager.getInstance(this)
             .enqueueUniqueWork("pictogram_prefetch", ExistingWorkPolicy.KEEP, prefetch)
     }
