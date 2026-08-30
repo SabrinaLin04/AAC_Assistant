@@ -29,10 +29,13 @@ class FirestoreRepository {
         if (contexts().limit(1).get().await().isEmpty.not()) return
 
         val defaults = listOf(
-            "Pasto" to "L'utente è a tavola durante il pasto e potrebbe voler chiedere cibo, bevande o dire che ha finito.",
-            "Visita medica" to "L'utente è dal medico e potrebbe dover descrivere dolore, rispondere a domande sui sintomi o chiedere spiegazioni.",
-            "Scuola" to "L'utente è a scuola e potrebbe voler chiedere aiuto, dire che non ha capito o comunicare un bisogno.",
-            "Casa" to "L'utente è a casa e potrebbe voler esprimere desideri quotidiani, stanchezza o richieste di attività."
+            "Pasto" to "Sono a tavola con altre persone. Voglio poter chiedere quello che desidero, rifiutare quello che non voglio, dire quando ho finito e commentare quello che sto mangiando. Voglio anche poter fare domande a chi è con me.",
+
+            "Visita medica" to "Sono dal medico. Voglio poter dire dove e quanto mi fa male, rispondere alle domande che mi vengono fatte, chiedere cosa sta succedendo e dire quando qualcosa mi spaventa o non voglio farlo.",
+
+            "Scuola" to "Sono a scuola con i compagni e l'insegnante. Voglio poter chiedere aiuto, dire quando non ho capito, chiedere di andare in bagno, dire quando ho finito e partecipare a quello che succede in classe.",
+
+            "Casa" to "Sono a casa con la mia famiglia. Voglio poter chiedere le cose che mi servono, dire di no a quello che non voglio fare, raccontare come mi sento e chiedere di fare qualcosa insieme."
         )
 
         defaults.forEach { (name, description)  -> addContext(name, description)}

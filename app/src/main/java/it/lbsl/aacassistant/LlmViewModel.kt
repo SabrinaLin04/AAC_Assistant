@@ -120,7 +120,9 @@ class LlmViewModel : ViewModel() {
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
                 "Suggerisci brevi frasi in prima persona che l'utente potrebbe voler dire. " +
-                "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano."
+                "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano." +
+                "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                "Non usare parentesi quadre, segnaposto o parole da completare."
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
@@ -172,19 +174,19 @@ class LlmViewModel : ViewModel() {
         _modelState.value = ModelState.Ready
     }
 
+    private val stopwords = setOf(
+        "il", "lo", "la", "l'", "i", "gli", "le", "un", "un'", "uno", "una",
+        "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
+        "del", "dell'", "dello", "della", "dei", "degli", "delle",
+        "al", "all'", "allo", "alla", "ai", "agli", "alle",
+        "dal", "dall'", "nel", "nell'", "nella", "nello", "negli", "nelle", "nei",
+        "sul", "sull'", "sulla", "sugli", "sulle", "sullo",
+        "che", "ci", "si", "ne", "e", "ed", "o", "od", "ma", "vi", "ad"
+    )
+
     // prende la parola piu lunga che non è una stopword (che probabilmente ha un pittogramma)
     // la lemmatizzazione corretta verrà integrata per la tesi
     private fun extractKeyword(sentence: String): String? {
-        val stopwords = setOf(
-            "il", "lo", "la", "l'", "i", "gli", "le", "un", "un'", "uno", "una",
-            "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
-            "del", "dell'", "dello", "della", "dei", "degli", "delle",
-            "al", "all'", "allo", "alla", "ai", "agli", "alle",
-            "dal", "dall'", "nel", "nell'", "nella", "nello", "negli", "nelle", "nei",
-            "sul", "sull'", "sulla", "sugli", "sulle", "sullo",
-            "che", "ci", "si", "ne", "e", "ed", "o", "od", "ma", "vi", "ad"
-        )
-
         return sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
@@ -192,10 +194,15 @@ class LlmViewModel : ViewModel() {
             .maxByOrNull { it.length }
     }
     private suspend fun resolvePictogram(sentence: String) {
-        val keyword = extractKeyword(sentence) ?: return
+        val words = sentence
+            .lowercase()
+            .split(Regex("[^\\p{L}]+"))
+            .filter { it.length > 2 && it !in stopwords }
 
-        // se manca un pittogramma rimane testo
-        val id = PictogramRepository.findPictogram(keyword) ?: return
+        // Try the index first for every word: a hit is instant and offline.
+        val id = words.firstNotNullOfOrNull { PictogramRepository.lookupCore(it) }
+            ?: words.firstNotNullOfOrNull { PictogramRepository.findPictogram(it) }
+            ?: return
 
         val list = _messages.value.orEmpty().toMutableList()
         if (list.isEmpty()) return
@@ -291,7 +298,9 @@ class LlmViewModel : ViewModel() {
             _chatState.value = ChatState.Generating
 
             val prompt= "Suggerisci 4 frasi brevi che potrei voler dire in questa situazione. " +
-                    "Scrivi una frase per riga, senza numerazione e senza commenti."
+                    "Scrivi una frase per riga, senza numerazione e senza commenti." +
+                    "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                    "Non usare parentesi quadre, segnaposto o parole da completare."
 
             val accumulated = StringBuilder()
 

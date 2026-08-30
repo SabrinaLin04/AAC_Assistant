@@ -28,6 +28,10 @@ object PictogramRepository {
         Log.d("Pictogram", "core index: ${coreIndex?.size} entries")
     }
 
+    fun lookupCore(word: String): Int? {
+        return coreIndex?.get(word.trim().lowercase())
+    }
+
     suspend fun findPictogram(word: String): Int? {
         val key = word.trim().lowercase()
         if (key.isBlank()) return null
