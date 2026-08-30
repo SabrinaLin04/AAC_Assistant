@@ -37,6 +37,7 @@ class ContextsViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                repository.defaultContexts()
                 _contexts.value = repository.getContexts().sortedBy { it.name }
                 _activeContextId.value = repository.getActiveContextId()
             } catch (e: Exception) {

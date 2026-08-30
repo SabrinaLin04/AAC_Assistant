@@ -187,6 +187,11 @@ class SuggestFragment: Fragment() {
                 binding.statusIndicator.text = getString(R.string.chat_status_available)
                 binding.statusIndicator.setTextColor(Color.parseColor("#4CAF50"))
             }
+
+            if (state is ChatState.Error) {
+                Snackbar.make(binding.root, getString(state.messageRes), Snackbar.LENGTH_LONG)
+                viewModel.clearChatError()
+            }
         }
     }
 

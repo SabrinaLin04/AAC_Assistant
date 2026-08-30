@@ -233,6 +233,11 @@ class LlmViewModel : ViewModel() {
 
             conv.sendMessageAsync(text)
                 .catch { error ->
+                    val list = _messages.value.orEmpty().toMutableList()
+                    if (list.isNotEmpty() && list.last().text.isBlank()) {
+                        list.removeAt(list.lastIndex)
+                        _messages.value = list
+                    }
                     _chatState.value = ChatState.Error(
                         messageRes = R.string.error_generation,
                         detail = error.localizedMessage
@@ -254,6 +259,25 @@ class LlmViewModel : ViewModel() {
             if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
             }
+        }
+    }
+
+    private fun sendDemoMessage(text: String) {
+        viewModelScope.launch {
+            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
+            _chatState.value = ChatState.Generating
+
+            delay(600)
+
+            val pool = pickDemoSuggestions()
+            val reply = pool.filterNot { it == lastDemoReply }.randomOrNull()
+                ?: pool.random()
+            lastDemoReply = reply
+
+            _messages.value= _messages.value.orEmpty() + ChatMessage("model", reply)
+            _chatState.value= ChatState.Idle
+
+            resolvePictogram(reply)
         }
     }
 
@@ -320,24 +344,13 @@ class LlmViewModel : ViewModel() {
             }
         }
     }
-    private fun sendDemoMessage(text: String) {
-        viewModelScope.launch {
-            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
-            _chatState.value = ChatState.Generating
 
-            delay(600)
-
-            val pool = pickDemoSuggestions()
-            val reply = pool.filterNot { it == lastDemoReply }.randomOrNull()
-                ?: pool.random()
-            lastDemoReply = reply
-
-            _messages.value= _messages.value.orEmpty() + ChatMessage("model", reply)
-            _chatState.value= ChatState.Idle
-
-            resolvePictogram(reply)
+    fun clearChatError() {
+        if (_chatState.value is ChatState.Error) {
+            _chatState.value = ChatState.Idle
         }
     }
+
 
 
 
