@@ -115,8 +115,8 @@ class ChatAdapter (
         when {
             //tutta la lista viene sostituita
             newMessages.size == old.size && newMessages != old && newMessages.size > 1 -> notifyDataSetChanged()
-            newMessages.size -old.size > 1 -> notifyDataSetChanged()
-            newMessages.size > old.size -> notifyItemChanged(newMessages.lastIndex)
+            newMessages.size - old.size > 1 -> notifyDataSetChanged()
+            newMessages.size > old.size -> notifyItemInserted(newMessages.lastIndex)
             newMessages.isNotEmpty() -> notifyItemChanged(newMessages.lastIndex)
             else -> notifyDataSetChanged()
         }
