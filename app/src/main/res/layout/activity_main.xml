@@ -7,8 +7,7 @@
     <androidx.drawerlayout.widget.DrawerLayout
         android:id="@+id/drawerLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="true">
+        android:layout_height="match_parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/main"
@@ -46,14 +45,15 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_gravity="start"
+            android:background="?attr/colorSurface"
             android:fitsSystemWindows="true">
 
             <LinearLayout
+                android:id="@+id/drawerRoot"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <!-- Zona scorrevole: header + voci -->
                 <androidx.core.widget.NestedScrollView
                     android:id="@+id/drawerScroll"
                     android:layout_width="match_parent"
@@ -82,7 +82,6 @@
                     android:layout_height="1dp"
                     android:background="?attr/colorOutline" />
 
-                <!-- Zona fissa: logout -->
                 <LinearLayout
                     android:id="@+id/logoutRow"
                     android:layout_width="match_parent"

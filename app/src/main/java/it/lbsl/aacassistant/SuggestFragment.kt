@@ -55,6 +55,16 @@ class SuggestFragment: Fragment() {
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+
+            // Usiamo il bottomContainer (che ha sfondo bianco) per gestire le insets.
+            // Quando la tastiera è chiusa, bars.bottom aggiunge spazio per la barra di navigazione.
+            // Quando è aperta, ime.bottom sposta tutto sopra la tastiera.
+            binding.bottomContainer.updatePadding(
+                bottom = maxOf(bars.bottom, ime.bottom)
+            )
+
             insets
         }
     }

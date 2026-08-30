@@ -17,6 +17,7 @@ import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
 import it.lbsl.aacassistant.databinding.ActivityWelcomeBinding
 import kotlinx.coroutines.launch
+import androidx.core.view.updatePadding
 
 class WelcomeActivity : AppCompatActivity() {
 
@@ -33,9 +34,16 @@ class WelcomeActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityWelcomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+
+            // La fascia viola si estende sotto la status bar,
+            // ma il logo resta dentro l'area sicura
+            binding.appLogo.updatePadding(top = systemBars.top / 2)
+
+            // Il bottone sta sopra la barra di navigazione
+            binding.signInButton.updatePadding(bottom = systemBars.bottom)
+
             insets
         }
         binding.signInButton.setOnClickListener {
@@ -59,6 +67,8 @@ class WelcomeActivity : AppCompatActivity() {
         val signInIntent = AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
+            .setTheme(R.style.Theme_AACAssistant_FirebaseUI)
+            .setLogo(R.mipmap.ic_launcher_round)
             .build()
 
         signInLauncher.launch(signInIntent)
