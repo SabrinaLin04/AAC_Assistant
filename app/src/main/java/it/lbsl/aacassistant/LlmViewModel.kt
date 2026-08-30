@@ -184,25 +184,25 @@ class LlmViewModel : ViewModel() {
         "che", "ci", "si", "ne", "e", "ed", "o", "od", "ma", "vi", "ad"
     )
 
-    // prende la parola piu lunga che non è una stopword (che probabilmente ha un pittogramma)
-    // la lemmatizzazione corretta verrà integrata per la tesi
-    private fun extractKeyword(sentence: String): String? {
-        return sentence
-            .lowercase()
-            .split(Regex("[^\\p{L}]+"))
-            .filter { it.length > 2 && it !in stopwords }
-            .maxByOrNull { it.length }
-    }
-    private suspend fun resolvePictogram(sentence: String) {
+    private suspend fun findPictogramFor(sentence: String): Int? {
         val words = sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
             .filter { it.length > 2 && it !in stopwords }
+            .sortedByDescending { it.length }
+            .take(4)
 
-        // Try the index first for every word: a hit is instant and offline.
-        val id = words.firstNotNullOfOrNull { PictogramRepository.lookupCore(it) }
-            ?: words.firstNotNullOfOrNull { PictogramRepository.findPictogram(it) }
-            ?: return
+        if (words.isEmpty()) return null
+
+        // Prima passata: indice locale, istantaneo e offline
+        words.firstNotNullOfOrNull { PictogramRepository.lookupCore(it) }?.let { return it }
+
+        // Seconda passata: rete
+        return words.firstNotNullOfOrNull { PictogramRepository.findPictogram(it) }
+    }
+
+    private suspend fun resolvePictogram(sentence: String) {
+        val id = findPictogramFor(sentence) ?: return
 
         val list = _messages.value.orEmpty().toMutableList()
         if (list.isEmpty()) return
@@ -341,8 +341,7 @@ class LlmViewModel : ViewModel() {
         _messages.value = suggestions.map { ChatMessage("model", it) }
 
         suggestions.forEachIndexed { index, text ->
-            val keyword = extractKeyword(text) ?: return@forEachIndexed
-            val id= PictogramRepository.findPictogram(keyword) ?: return@forEachIndexed
+            val id = findPictogramFor(text) ?: return@forEachIndexed
 
             val list = _messages.value.orEmpty().toMutableList()
             if (index < list.size) {

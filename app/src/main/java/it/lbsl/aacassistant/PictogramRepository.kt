@@ -29,11 +29,14 @@ object PictogramRepository {
     }
 
     fun lookupCore(word: String): Int? {
-        return coreIndex?.get(word.trim().lowercase())
+        val result = coreIndex?.get(word.trim().lowercase())
+        Log.d("Pictogram", "indice '$word' -> $result")
+        return result
     }
 
     suspend fun findPictogram(word: String): Int? {
         val key = word.trim().lowercase()
+        Log.d("Pictogram", "cerco in rete: '$key'")
         if (key.isBlank()) return null
 
         coreIndex?.get(key)?.let { return it } //prima controllo l'indice locale
