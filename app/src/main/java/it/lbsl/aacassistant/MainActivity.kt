@@ -11,7 +11,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.navigation.NavController
 import androidx.activity.addCallback
 import androidx.core.view.GravityCompat
-
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -22,6 +21,11 @@ import it.lbsl.aacassistant.databinding.ActivityMainBinding
 import androidx.navigation.ui.navigateUp
 import com.firebase.ui.auth.AuthUI
 import androidx.appcompat.app.AlertDialog
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,6 +52,19 @@ class MainActivity : AppCompatActivity() {
                 onBackPressedDispatcher.onBackPressed()
             }
         }
+        schedulePictogramPrefetch()
+    }
+
+    private fun schedulePictogramPrefetch() {
+        val prefetch = OneTimeWorkRequestBuilder<PictogramPrefetchWorker>()
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            ).build()
+
+        WorkManager.getInstance(this)
+            .enqueueUniqueWork("pictogram_prefetch", ExistingWorkPolicy.KEEP, prefetch)
     }
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->

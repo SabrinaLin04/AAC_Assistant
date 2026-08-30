@@ -18,7 +18,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.transition.FragmentTransitionSupport
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
 
 class SuggestFragment: Fragment() {
@@ -47,6 +46,7 @@ class SuggestFragment: Fragment() {
 
         setupRecyclerView()
         setupInputBar()
+        setupSuggestButton()
         setupContextBar()
         observeViewModel()
 
@@ -77,9 +77,9 @@ class SuggestFragment: Fragment() {
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
             isFavorite = { text -> favoritesViewModel.isFavorite(text)},
-            onToggleFavorite = { text ->
+            onToggleFavorite = { text, pictogramId ->
                 val wasSaved = favoritesViewModel.isFavorite(text)
-                favoritesViewModel.toggleFavorite(text)
+                favoritesViewModel.toggleFavorite(text, pictogramId)
                 Snackbar.make(
                     binding.root,
                     if (wasSaved) R.string.favorite_removed else R.string.favorite_added,
@@ -101,6 +101,12 @@ class SuggestFragment: Fragment() {
                     }
                 }, 100)
             }
+        }
+    }
+
+    private fun setupSuggestButton() {
+        binding.suggestButton.setOnClickListener {
+            viewModel.requestSuggestions()
         }
     }
 
@@ -152,7 +158,8 @@ class SuggestFragment: Fragment() {
                 is ModelState.Idle -> { }
                 is ModelState.Initializing -> showLoading(getString(state.messageRes))
                 is ModelState.Downloading -> showLoading(getString(R.string.model_downloading, state.percent))
-                is ModelState.Ready -> showChat()
+                is ModelState.Ready -> showChat( demo = false)
+                is ModelState.DemoMode -> showChat(demo = true)
                 is ModelState.Error -> showError(
                     buildString {
                         append(getString(state.messageRes))
@@ -186,6 +193,7 @@ class SuggestFragment: Fragment() {
         viewModel.chatState.observe(viewLifecycleOwner) { state ->
             val isGenerating = state is ChatState.Generating
             binding.messageInput.isEnabled = !isGenerating
+            binding.suggestButton.isEnabled = !isGenerating
             val enabled = !isGenerating && !binding.messageInput.text.isNullOrBlank()
             binding.sendButton.isEnabled = enabled
             updateSendButtonTint(enabled)
@@ -197,6 +205,11 @@ class SuggestFragment: Fragment() {
                 binding.statusIndicator.text = getString(R.string.chat_status_available)
                 binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_available))
             }
+
+            if (state is ChatState.Error) {
+                Snackbar.make(binding.root, getString(state.messageRes), Snackbar.LENGTH_LONG)
+                viewModel.clearChatError()
+            }
         }
     }
 
@@ -207,10 +220,11 @@ class SuggestFragment: Fragment() {
         binding.loadingText.text = message
     }
 
-    private fun showChat() {
+    private fun showChat(demo: Boolean = false) {
         binding.loadingGroup.visibility = View.GONE
         binding.errorGroup.visibility = View.GONE
         binding.chatGroup.visibility = View.VISIBLE
+        binding.demoBanner.visibility = if (demo) View.VISIBLE else View.GONE
     }
 
     private fun showError(message: String) {
