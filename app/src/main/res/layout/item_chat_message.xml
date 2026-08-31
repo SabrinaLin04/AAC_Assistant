@@ -42,17 +42,14 @@
                 app:layout_constraintEnd_toStartOf="@id/favoriteStar"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/pictogram"
+                <LinearLayout
+                    android:id="@+id/pictogramStrip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:maxWidth="@dimen/pictogram_max_size"
-                    android:maxHeight="@dimen/pictogram_max_size"
-                    android:adjustViewBounds="true"
-                    android:layout_marginBottom="4dp"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="6dp"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/messageText"
