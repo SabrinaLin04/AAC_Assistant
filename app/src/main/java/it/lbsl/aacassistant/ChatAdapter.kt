@@ -39,6 +39,8 @@ class ChatAdapter (
 
         holder.binding.messageText.text = message.text
 
+        holder.binding.authorLabel.gravity = if (isUser) Gravity.END else Gravity.START
+
         val params = holder.binding.bubbleColumn.layoutParams
                 as ConstraintLayout.LayoutParams
         params.horizontalBias = if (isUser) 1f else 0f
