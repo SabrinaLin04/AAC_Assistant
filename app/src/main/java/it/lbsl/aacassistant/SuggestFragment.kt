@@ -71,6 +71,7 @@ class SuggestFragment: Fragment() {
         _binding=null
     }
 
+    //configura la recycler view per la chat impostando l'adapter, la logica per salvare i preferiti e lo scorrimento automatico all'ultimo messaggio quando cambia il layout
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
             isFavorite = { text -> favoritesViewModel.isFavorite(text)},
@@ -107,6 +108,7 @@ class SuggestFragment: Fragment() {
         }
     }
 
+    //imposta il comportamento della barra di testo, gestendo l'invio dei messaggi e abilitando il pulsante solo se è presente del testo e il modello non è in elaborazione
     private fun setupInputBar() {
         updateSendButtonTint(false)
 
@@ -130,6 +132,7 @@ class SuggestFragment: Fragment() {
         })
     }
 
+    //configura l'azione al tocco sulla barra del contesto per navigare verso la schermata di gestione contesti rimuovendo il fragment corrente dallo stack
     private fun setupContextBar() {
         binding.contextBar.setOnClickListener {
             findNavController().navigate(
@@ -180,9 +183,10 @@ class SuggestFragment: Fragment() {
         }
 
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
-            chatAdapter.updateMessages(messages)
-            if (messages.isNotEmpty()) {
-                binding.recyclerView.smoothScrollToPosition(messages.lastIndex)
+            chatAdapter.updateMessages(messages) {
+                if (messages.isNotEmpty()) {
+                    binding.recyclerView.scrollToPosition(messages.lastIndex)
+                }
             }
         }
 
@@ -209,6 +213,7 @@ class SuggestFragment: Fragment() {
         }
     }
 
+    //nasconde la chat principale e le schermate di errore per visualizzare l'animazione di caricamento
     private fun showLoading(message: String) {
         binding.loadingGroup.visibility = View.VISIBLE
         binding.errorGroup.visibility = View.GONE
@@ -216,6 +221,7 @@ class SuggestFragment: Fragment() {
         binding.loadingText.text = message
     }
 
+    //rende visibile la lista dei messaggi nascondendo gli indicatori di stato e mostrando un banner specifico se il modello è avviato in modalità dimostrativa
     private fun showChat(demo: Boolean = false) {
         binding.loadingGroup.visibility = View.GONE
         binding.errorGroup.visibility = View.GONE
