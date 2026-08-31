@@ -38,7 +38,8 @@ sealed interface ChatState {
 data class ChatMessage(
     val author: String,
     val text: String,
-    val pictogramIds: List<Int> = emptyList()
+    val pictogramIds: List<Int> = emptyList(),
+    val id: Long = System.nanoTime()
 )
 
 
@@ -118,16 +119,13 @@ class LlmViewModel : ViewModel() {
 
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
-                "Suggerisci brevissime frasi in prima persona che l'utente potrebbe voler dire. " +
-                "Usa frasi semplici, dirette. Rispondi sempre in italiano. " +
-                "Ogni frase deve essere completa. " +
-                "Non usare parentesi quadre, segnaposto o parole da completare. " +
-                "Non usare mai le virgolette (\"\"). " +
-                "Non usare forme come confuso/a o stanco/a: scegli una sola forma. "
+                "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
+                "Ogni frase: 2-5 parole, italiano semplice, una per riga. " +
+                "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
-            ?.let { "$base La situazione attuale è: $it" }
+            ?.let { "$base\n\nSituazione: $it" }
             ?: base
     }
 
@@ -148,9 +146,9 @@ class LlmViewModel : ViewModel() {
         val convConfig = ConversationConfig(
             systemInstruction = Contents.of(buildSystemPrompt()),
             samplerConfig = SamplerConfig(
-                topK = 20,
+                topK = 40,
                 topP = 0.95,
-                temperature = 0.7
+                temperature = 0.8
             )
         )
         conversation = eng.createConversation(convConfig)
@@ -258,8 +256,8 @@ class LlmViewModel : ViewModel() {
                     accumulated.append(chunk.toString())
 
                     val updatedList = _messages.value.orEmpty().toMutableList()
-                    updatedList[updatedList.lastIndex] = ChatMessage(
-                        author = "model",
+                    val last = updatedList.last()
+                    updatedList[updatedList.lastIndex] = last.copy(
                         text = accumulated.toString()
                     )
                     _messages.value = updatedList
@@ -292,22 +290,8 @@ class LlmViewModel : ViewModel() {
         }
     }
 
-
-    private fun newSuggestionConversation(): Conversation? {
-        val eng = engine ?: return null
-        return eng.createConversation(
-            ConversationConfig(
-                systemInstruction = Contents.of(buildSystemPrompt()),
-                samplerConfig = SamplerConfig(
-                    topK = 40,
-                    topP = 0.95,
-                    temperature = 0.7
-                )
-            )
-        )
-    }
-
     fun requestSuggestions() {
+        if (_chatState.value is ChatState.Generating) return
         if (_modelState.value is ModelState.DemoMode) {
             requestDemoSuggestions()
             return
@@ -316,47 +300,31 @@ class LlmViewModel : ViewModel() {
         viewModelScope.launch {
             _chatState.value = ChatState.Generating
 
-            val conv = newSuggestionConversation() ?: run {
+            createConversation()
+            val conv = conversation ?: run {
                 _chatState.value = ChatState.Idle
                 return@launch
             }
 
-            try {
-                val situation = contextDescription
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { "La situazione è: $it. " }
-                    ?: ""
+            val prompt = listOf(
+                "Suggerisci 4 frasi.",
+                "Proponi 4 frasi utili adesso.",
+                "Scrivi 4 frasi possibili.",
+                "Genera 4 frasi per questo momento."
+            ).random()
 
-                val opener = listOf(
-                    "Suggerisci 4 frasi brevi che potrei voler dire.",
-                    "Proponi 4 frasi utili in questo momento.",
-                    "Scrivi 4 frasi che potrei dire adesso.",
-                    "Genera 4 possibili frasi per questa situazione."
-                ).random()
+            val accumulated = StringBuilder()
 
-                val prompt = situation + opener + " " +
-                        "Scrivi una frase per riga, senza numerazione, senza virgolette e senza commenti. " +
-                        "Ogni frase deve essere completa." +
-                        "Non usare parentesi quadre, segnaposto o parole da completare. " +
-                        "Frasi da 3-4 parole."
+            conv.sendMessageAsync(prompt)
+                .catch { error ->
+                    _chatState.value = ChatState.Error(
+                        messageRes = R.string.error_generation,
+                        detail = error.localizedMessage
+                    )
+                }
+                .collect { chunk -> accumulated.append(chunk.toString()) }
 
-
-                val accumulated = StringBuilder()
-
-                conv.sendMessageAsync(prompt)
-                    .catch { error ->
-                        _chatState.value = ChatState.Error(
-                            messageRes = R.string.error_generation,
-                            detail = error.localizedMessage
-                        )
-                    }
-                    .collect { chunk -> accumulated.append(chunk.toString()) }
-
-                publishSuggestions(splitSuggestions(accumulated.toString()))
-
-            } finally {
-                conv.close()
-            }
+            publishSuggestions(splitSuggestions(accumulated.toString()))
 
             if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
@@ -375,9 +343,11 @@ class LlmViewModel : ViewModel() {
 
     private fun splitSuggestions(raw: String): List<String> =
         raw.lines()
-            .map { it.trim().removePrefix("-").removePrefix("*").trim().removeSurrounding("\"") }
-            .map { it.replace(Regex("^\\d+[.)]\\s*"), "").removeSurrounding("\"") }
-            .filter { it.length in 3..120 }
+            .map { it.trim().removePrefix("-").removePrefix("*").trim() }
+            .map { it.replace(Regex("^\\d+[.)]\\s*"), "") }
+            .map { it.trim('"', '"', '"', '\'', '.') }
+            .filterNot { it.contains("[") || it.contains("/") || it.contains(":") }
+            .filter { it.length in 3..80 }
             .take(4)
 
     private suspend fun publishSuggestions(suggestions: List<String>) {
@@ -395,10 +365,8 @@ class LlmViewModel : ViewModel() {
         }
     }
 
-
-
-
     override fun onCleared() {
+        super.onCleared()
         conversation?.close()
         engine?.close()
         conversation = null
