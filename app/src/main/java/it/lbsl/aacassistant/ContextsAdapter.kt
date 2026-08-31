@@ -16,6 +16,7 @@ class ContextsAdapter (
 ) : ListAdapter<UserContext, ContextsAdapter.VH>(DIFF) {
     private var activeId: String?= null
 
+    //imposta il nuovo ID attivo e, se è cambiato rispetto al precedente, ricarica l'intera lista per aggiornare la UI
     fun setActiveId(id: String?) {
         if (id == activeId) return
         activeId = id
@@ -40,10 +41,13 @@ class ContextsAdapter (
 
     companion object {
         private val DIFF= object : DiffUtil.ItemCallback<UserContext>() {
+
+            //controlla se i due elementi rappresentano la stessa entità logica confrontando il loro id
             override fun areItemsTheSame(oldItem: UserContext, newItem: UserContext): Boolean {
                 return oldItem.id == newItem.id
             }
 
+            //controlla se tutti i campi dati all'interno dei due elementi sono identici
             override fun areContentsTheSame(oldItem: UserContext, newItem: UserContext): Boolean {
                 return oldItem == newItem
             }

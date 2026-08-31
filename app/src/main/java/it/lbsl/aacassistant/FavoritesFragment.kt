@@ -1,4 +1,5 @@
 package it.lbsl.aacassistant
+
 import androidx.appcompat.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -68,6 +69,7 @@ class FavoritesFragment: Fragment() {
         }
     }
 
+    //gestisce la visibilità degli elementi dell'interfaccia alternando tra l'elenco dei preferiti e il messaggio di stato vuoto in base ai caricamenti
     private fun updateEmptyState(){
         val empty = viewModel.isEmpty.value == true
         val loading = viewModel.isLoading.value == true
@@ -75,6 +77,7 @@ class FavoritesFragment: Fragment() {
         binding.favoritesRecycler.isVisible = !empty
     }
 
+    //mostra un dialog contenente il testo e i pittogrammi del preferito selezionato e notifica il view model per incrementarne l'utilizzo
     private fun showFavorite(favorite: Favorite) {
         val view = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_speak, null)
@@ -104,8 +107,6 @@ class FavoritesFragment: Fragment() {
                 row.addView(image)
             }
 
-            // One description for the whole row: reading each word out of context
-            // would be worse than reading the phrase.
             row.contentDescription = favorite.text
         }
 
@@ -117,6 +118,7 @@ class FavoritesFragment: Fragment() {
         viewModel.markAsUsed(favorite.id)
     }
 
+    //implementa la funzionalità di scorrimento laterale per eliminare un elemento dalla lista offrendo la possibilità di annullare l'azione
     private fun setupSwipeToDelete(){
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT){
             override fun onMove(

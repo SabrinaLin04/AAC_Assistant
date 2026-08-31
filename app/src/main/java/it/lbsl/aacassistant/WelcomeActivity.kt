@@ -37,11 +37,7 @@ class WelcomeActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-            // La fascia viola si estende sotto la status bar,
-            // ma il logo resta dentro l'area sicura
             binding.appLogo.updatePadding(top = systemBars.top / 2)
-
-            // Il bottone sta sopra la barra di navigazione
             binding.signInButton.updatePadding(bottom = systemBars.bottom)
 
             insets
