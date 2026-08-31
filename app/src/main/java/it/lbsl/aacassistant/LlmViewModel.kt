@@ -83,6 +83,8 @@ class LlmViewModel : ViewModel() {
 
     private var contextDescription: String? = null
 
+    private var lastIncoming: String? = null
+
     private var lastDemoReply: String? = null
 
     companion object {
@@ -225,6 +227,7 @@ class LlmViewModel : ViewModel() {
         if (description == contextDescription) return
 
         contextDescription = description
+        lastIncoming = null
 
         if (engine != null) {
             createConversation()
@@ -287,6 +290,7 @@ class LlmViewModel : ViewModel() {
 
     fun sendMessage(text: String) {
         viewModelScope.launch {
+            lastIncoming = text
             val ids = findPictogramsFor(text)
             _messages.value = _messages.value.orEmpty() + ChatMessage("user", text, ids)
         }
@@ -329,7 +333,10 @@ class LlmViewModel : ViewModel() {
                 return@launch
             }
 
-            val prompt = listOf(
+            val prompt = lastIncoming?.let {
+                //se qualcuno ha scritto qualcosa il primo suggerisci da frasi inerenti
+                "Qualcuno mi ha detto: \"$it\". Suggerisci 4 frasi che potrei rispondere."
+            } ?: listOf(
                 "Suggerisci 4 frasi.",
                 "Proponi 4 frasi utili adesso.",
                 "Scrivi 4 frasi possibili.",
@@ -349,6 +356,8 @@ class LlmViewModel : ViewModel() {
 
             publishSuggestions(splitSuggestions(accumulated.toString()))
 
+            lastIncoming = null
+
             if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
             }
@@ -360,8 +369,19 @@ class LlmViewModel : ViewModel() {
         viewModelScope.launch {
             _chatState.value = ChatState.Generating
             delay(600)
-            publishSuggestions(pickDemoSuggestions())
-            _chatState.value= ChatState.Idle
+
+            val suggestions = if (lastIncoming != null) {
+                listOf(
+                    "Sì.", "No.",
+                    "Non lo so.", "Non ho capito."
+                )
+            } else {
+                pickDemoSuggestions()
+            }
+
+            publishSuggestions(suggestions)
+            lastIncoming = null
+            _chatState.value = ChatState.Idle
         }
     }
 
@@ -378,10 +398,16 @@ class LlmViewModel : ViewModel() {
     private suspend fun publishSuggestions(suggestions: List<String>) {
         if (suggestions.isEmpty()) return
 
-        val messages = suggestions.map { text ->
+        val newMessages = suggestions.map { text ->
             ChatMessage("model", text, findPictogramsFor(text))
         }
-        _messages.value = messages
+
+        //se c'è una frase la mantiene
+        _messages.value = if (lastIncoming != null) {
+            _messages.value.orEmpty() + newMessages
+        } else {
+            newMessages
+        }
     }
 
     fun clearChatError() {
