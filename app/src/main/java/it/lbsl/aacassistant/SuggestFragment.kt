@@ -77,9 +77,9 @@ class SuggestFragment: Fragment() {
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
             isFavorite = { text -> favoritesViewModel.isFavorite(text)},
-            onToggleFavorite = { text, pictogramId ->
+            onToggleFavorite = { text, pictogramIds ->
                 val wasSaved = favoritesViewModel.isFavorite(text)
-                favoritesViewModel.toggleFavorite(text, pictogramId)
+                favoritesViewModel.toggleFavorite(text, pictogramIds)
                 Snackbar.make(
                     binding.root,
                     if (wasSaved) R.string.favorite_removed else R.string.favorite_added,

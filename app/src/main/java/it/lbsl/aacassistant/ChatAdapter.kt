@@ -1,6 +1,8 @@
 package it.lbsl.aacassistant
 
 import android.view.View
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -13,7 +15,7 @@ import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
 class ChatAdapter (
     private val isFavorite: (String) -> Boolean = { false },
-    private val onToggleFavorite: (String, Int?) -> Unit = { _, _ -> }
+    private val onToggleFavorite: (String, List<Int>) -> Unit = { _, _ -> }
 ) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
     private var messageList: List<ChatMessage> = emptyList()
 
@@ -69,19 +71,36 @@ class ChatAdapter (
             holder.binding.messageText.background = drawable
             holder.binding.messageText.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.m1_surface))
 
-            val picto = holder.binding.pictogram
+            val strip = holder.binding.pictogramStrip
+            val context = holder.itemView.context
 
-            if (message.pictogramId != null) {
-                picto.visibility = View.VISIBLE
-                picto.load(PictogramRepository.imageSource(holder.itemView.context, message.pictogramId)) {
-                    crossfade(true)
-                    placeholder(R.drawable.ic_pictogram_placeholder)
-                    error(R.drawable.ic_pictogram_placeholder)
-                }
-                picto.contentDescription = message.text
+            strip.removeAllViews()
+
+            if (message.pictogramIds.isEmpty()) {
+                strip.visibility = View.GONE
             } else {
-                picto.visibility = View.GONE
-                picto.setImageDrawable(null)
+                strip.visibility = View.VISIBLE
+
+                val size = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_size)
+                val gap = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_gap)
+
+                message.pictogramIds.forEachIndexed { index, id ->
+                    val image = ImageView(context).apply {
+                        layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                            if (index > 0) marginStart = gap
+                        }
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        contentDescription = null
+                        load(PictogramRepository.imageSource(context, id)) {   //preferisce il file locale
+                            crossfade(true)
+                            placeholder(R.drawable.ic_pictogram_placeholder)
+                            error(R.drawable.ic_pictogram_placeholder)
+                        }
+                    }
+                    strip.addView(image)
+                }
+
+                strip.contentDescription = message.text
             }
         }
 
@@ -101,7 +120,7 @@ class ChatAdapter (
             star.contentDescription = context.getString(
                 if (saved) R.string.favorite_deleted else R.string.favorite_added
             )
-            star.setOnClickListener { onToggleFavorite(message.text, message.pictogramId) }
+            star.setOnClickListener { onToggleFavorite(message.text, message.pictogramIds) }
         }
     }
 
@@ -115,8 +134,8 @@ class ChatAdapter (
         when {
             //tutta la lista viene sostituita
             newMessages.size == old.size && newMessages != old && newMessages.size > 1 -> notifyDataSetChanged()
-            newMessages.size -old.size > 1 -> notifyDataSetChanged()
-            newMessages.size > old.size -> notifyItemChanged(newMessages.lastIndex)
+            newMessages.size - old.size > 1 -> notifyDataSetChanged()
+            newMessages.size > old.size -> notifyItemInserted(newMessages.lastIndex)
             newMessages.isNotEmpty() -> notifyItemChanged(newMessages.lastIndex)
             else -> notifyDataSetChanged()
         }
