@@ -21,11 +21,11 @@ class PictogramPrefetchWorker(context: Context, params: WorkerParameters)
             val file = File(dir, "$id.png")
             if (file.exists()) return@forEach
             try {
-                val temp= File(dir, "$id.png")
+                val temp = File(dir, "$id.png.tmp")
                 URL(PictogramRepository.imageUrl(id)).openStream().use { input ->
                     temp.outputStream().use { input.copyTo(it) }
                 }
-                temp.renameTo(file)
+                if (!temp.renameTo(file)) temp.delete()
             } catch (e: Exception) {
                 failures++
             }

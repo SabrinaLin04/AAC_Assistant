@@ -39,7 +39,7 @@ sealed interface ChatState {
 data class ChatMessage(
     val author: String,
     val text: String,
-    val pictogramId: Int? = null
+    val pictogramIds: List<Int> = emptyList()
 )
 
 
@@ -120,9 +120,12 @@ class LlmViewModel : ViewModel() {
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
                 "Suggerisci brevi frasi in prima persona che l'utente potrebbe voler dire. " +
-                "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano." +
+                "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano. " +
                 "Ogni frase deve essere completa e pronunciabile così com'è. " +
-                "Non usare parentesi quadre, segnaposto o parole da completare."
+                "Non usare parentesi quadre, segnaposto o parole da completare. " +
+                "Non usare forme come confuso/a o stanco/a: scegli una sola forma. " +
+                "Scrivi i verbi all'infinito, come in una tabella di comunicazione: " +
+                "\"Io volere acqua\", \"Io avere bisogno di aiuto\", \"Io non capire\"."
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
@@ -149,7 +152,7 @@ class LlmViewModel : ViewModel() {
             samplerConfig = SamplerConfig(
                 topK = 20,
                 topP = 0.95,
-                temperature = 0.7
+                temperature = 0.5
             )
         )
         conversation = eng.createConversation(convConfig)
@@ -184,29 +187,35 @@ class LlmViewModel : ViewModel() {
         "che", "ci", "si", "ne", "e", "ed", "o", "od", "ma", "vi", "ad"
     )
 
-    // prende la parola piu lunga che non è una stopword (che probabilmente ha un pittogramma)
-    // la lemmatizzazione corretta verrà integrata per la tesi
-    private fun extractKeyword(sentence: String): String? {
-        return sentence
-            .lowercase()
-            .split(Regex("[^\\p{L}]+"))
-            .filter { it.length > 2 && it !in stopwords }
-            .maxByOrNull { it.length }
-    }
-    private suspend fun resolvePictogram(sentence: String) {
+    private suspend fun findPictogramsFor(sentence: String): List<Int> {
         val words = sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
             .filter { it.length > 2 && it !in stopwords }
+            .take(6)                      // ordine della frase, non per lunghezza
 
-        // Try the index first for every word: a hit is instant and offline.
-        val id = words.firstNotNullOfOrNull { PictogramRepository.lookupCore(it) }
-            ?: words.firstNotNullOfOrNull { PictogramRepository.findPictogram(it) }
-            ?: return
+        val ids = mutableListOf<Int>()
+
+        for (word in words) {
+            val id = PictogramRepository.lookupCore(word)
+                ?: PictogramRepository.findPictogram(word)
+
+            if (id != null && id !in ids) { //evita duplicati perche' due parole diverse possono corrispondere allo stesso pittogramma
+                ids.add(id)
+            }
+            if (ids.size >= 3) break
+        }
+
+        return ids
+    }
+
+    private suspend fun resolvePictogram(sentence: String) {
+        val ids = findPictogramsFor(sentence)
+        if (ids.isEmpty()) return
 
         val list = _messages.value.orEmpty().toMutableList()
         if (list.isEmpty()) return
-        list[list.lastIndex] = list.last().copy(pictogramId = id)
+        list[list.lastIndex] = list.last().copy(pictogramIds = ids)
         _messages.value = list
     }
 
@@ -286,35 +295,82 @@ class LlmViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Conversazione usa-e-getta per i suggerimenti: senza storia precedente
+     * il modello non ripropone le stesse frasi. Parametri piu' alti della chat
+     * normale perche' qui la varieta' e' desiderata.
+     */
+    private fun newSuggestionConversation(): Conversation? {
+        val eng = engine ?: return null
+        return eng.createConversation(
+            ConversationConfig(
+                systemInstruction = Contents.of(buildSystemPrompt()),
+                samplerConfig = SamplerConfig(
+                    topK = 40,
+                    topP = 0.95,
+                    temperature = 0.5
+                )
+            )
+        )
+    }
+
     fun requestSuggestions() {
         if (_modelState.value is ModelState.DemoMode) {
             requestDemoSuggestions()
             return
         }
 
-        val conv = conversation ?: return
-
         viewModelScope.launch {
             _chatState.value = ChatState.Generating
 
-            val prompt= "Suggerisci 4 frasi brevi che potrei voler dire in questa situazione. " +
-                    "Scrivi una frase per riga, senza numerazione e senza commenti." +
-                    "Ogni frase deve essere completa e pronunciabile così com'è. " +
-                    "Non usare parentesi quadre, segnaposto o parole da completare."
+            val conv = newSuggestionConversation() ?: run {
+                _chatState.value = ChatState.Idle
+                return@launch
+            }
 
-            val accumulated = StringBuilder()
+            try {
+                val situation = contextDescription
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { "La situazione è: $it. " }
+                    ?: ""
 
-            conv.sendMessageAsync(prompt)
-                .catch { error ->
-                    _chatState.value = ChatState.Error(
-                        messageRes = R.string.error_generation,
-                        detail = error.localizedMessage
-                    )
-                }.collect { chunk -> accumulated.append(chunk.toString()) }
-            //prima collezioniamo la risposta e poi la dividiamo
-            publishSuggestions(splitSuggestions(accumulated.toString()))
+                val opener = listOf(
+                    "Suggerisci 4 frasi brevi che potrei voler dire.",
+                    "Proponi 4 frasi utili in questo momento.",
+                    "Scrivi 4 frasi che potrei dire adesso.",
+                    "Genera 4 possibili frasi per questa situazione."
+                ).random()
 
-            if(_chatState.value is ChatState.Generating) {
+                val prompt = situation + opener + " " +
+                        "Scrivi una frase per riga, senza numerazione e senza commenti. " +
+                        "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                        "Non usare parentesi quadre, segnaposto o parole da completare. " +
+                        "IMPORTANTE: usa i verbi solo all'infinito, mai coniugati. " +
+                        "Esempi del formato richiesto:\n" +
+                        "Io avere bisogno di aiuto\n" +
+                        "Io non capire\n" +
+                        "Io volere acqua\n" +
+                        "Io sentire dolore\n" +
+                        "Scrivi 4 frasi nuove con questo stesso formato, diverse dagli esempi."
+
+                val accumulated = StringBuilder()
+
+                conv.sendMessageAsync(prompt)
+                    .catch { error ->
+                        _chatState.value = ChatState.Error(
+                            messageRes = R.string.error_generation,
+                            detail = error.localizedMessage
+                        )
+                    }
+                    .collect { chunk -> accumulated.append(chunk.toString()) }
+
+                publishSuggestions(splitSuggestions(accumulated.toString()))
+
+            } finally {
+                conv.close()
+            }
+
+            if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
             }
         }
@@ -341,12 +397,12 @@ class LlmViewModel : ViewModel() {
         _messages.value = suggestions.map { ChatMessage("model", it) }
 
         suggestions.forEachIndexed { index, text ->
-            val keyword = extractKeyword(text) ?: return@forEachIndexed
-            val id= PictogramRepository.findPictogram(keyword) ?: return@forEachIndexed
+            val ids = findPictogramsFor(text)
+            if (ids.isEmpty()) return@forEachIndexed
 
             val list = _messages.value.orEmpty().toMutableList()
             if (index < list.size) {
-                list[index] = list[index].copy(pictogramId = id)
+                list[index] = list[index].copy(pictogramIds = ids)
                 _messages.value = list
             }
         }
