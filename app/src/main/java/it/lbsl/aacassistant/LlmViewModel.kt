@@ -22,7 +22,6 @@ import kotlinx.coroutines.delay
 
 sealed interface ModelState {
     object Idle : ModelState
-    data class Downloading(val percent: Int) : ModelState
     data class Initializing(@StringRes val messageRes: Int) : ModelState
     object Ready : ModelState
 
@@ -119,13 +118,12 @@ class LlmViewModel : ViewModel() {
 
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
-                "Suggerisci brevi frasi in prima persona che l'utente potrebbe voler dire. " +
-                "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano. " +
-                "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                "Suggerisci brevissime frasi in prima persona che l'utente potrebbe voler dire. " +
+                "Usa frasi semplici, dirette. Rispondi sempre in italiano. " +
+                "Ogni frase deve essere completa. " +
                 "Non usare parentesi quadre, segnaposto o parole da completare. " +
-                "Non usare forme come confuso/a o stanco/a: scegli una sola forma. " +
-                "Scrivi i verbi all'infinito, come in una tabella di comunicazione: " +
-                "\"Io volere acqua\", \"Io avere bisogno di aiuto\", \"Io non capire\"."
+                "Non usare mai le virgolette (\"\"). " +
+                "Non usare forme come confuso/a o stanco/a: scegli una sola forma. "
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
@@ -152,7 +150,7 @@ class LlmViewModel : ViewModel() {
             samplerConfig = SamplerConfig(
                 topK = 20,
                 topP = 0.95,
-                temperature = 0.5
+                temperature = 0.7
             )
         )
         conversation = eng.createConversation(convConfig)
@@ -178,13 +176,13 @@ class LlmViewModel : ViewModel() {
     }
 
     private val stopwords = setOf(
-        "il", "lo", "la", "l'", "i", "gli", "le", "un", "un'", "uno", "una",
-        "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
-        "del", "dell'", "dello", "della", "dei", "degli", "delle",
-        "al", "all'", "allo", "alla", "ai", "agli", "alle",
-        "dal", "dall'", "nel", "nell'", "nella", "nello", "negli", "nelle", "nei",
-        "sul", "sull'", "sulla", "sugli", "sulle", "sullo",
-        "che", "ci", "si", "ne", "e", "ed", "o", "od", "ma", "vi", "ad"
+        "gli", "uno", "una", "con", "per", "tra", "fra",
+        "del", "dello", "della", "dei", "degli", "delle",
+        "all", "allo", "alla", "agli", "alle",
+        "dal", "dallo", "dalla", "dai", "dagli", "dalle",
+        "nel", "nello", "nella", "nei", "negli", "nelle",
+        "sul", "sullo", "sulla", "sui", "sugli", "sulle",
+        "che"
     )
 
     private suspend fun findPictogramsFor(sentence: String): List<Int> {
@@ -197,8 +195,7 @@ class LlmViewModel : ViewModel() {
         val ids = mutableListOf<Int>()
 
         for (word in words) {
-            val id = PictogramRepository.lookupCore(word)
-                ?: PictogramRepository.findPictogram(word)
+            val id = PictogramRepository.findPictogram(word)
 
             if (id != null && id !in ids) { //evita duplicati perche' due parole diverse possono corrispondere allo stesso pittogramma
                 ids.add(id)
@@ -304,7 +301,7 @@ class LlmViewModel : ViewModel() {
                 samplerConfig = SamplerConfig(
                     topK = 40,
                     topP = 0.95,
-                    temperature = 0.5
+                    temperature = 0.7
                 )
             )
         )
@@ -338,16 +335,11 @@ class LlmViewModel : ViewModel() {
                 ).random()
 
                 val prompt = situation + opener + " " +
-                        "Scrivi una frase per riga, senza numerazione e senza commenti. " +
-                        "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                        "Scrivi una frase per riga, senza numerazione, senza virgolette e senza commenti. " +
+                        "Ogni frase deve essere completa." +
                         "Non usare parentesi quadre, segnaposto o parole da completare. " +
-                        "IMPORTANTE: usa i verbi solo all'infinito, mai coniugati. " +
-                        "Esempi del formato richiesto:\n" +
-                        "Io avere bisogno di aiuto\n" +
-                        "Io non capire\n" +
-                        "Io volere acqua\n" +
-                        "Io sentire dolore\n" +
-                        "Scrivi 4 frasi nuove con questo stesso formato, diverse dagli esempi."
+                        "Frasi da 3-4 parole."
+
 
                 val accumulated = StringBuilder()
 
@@ -383,25 +375,18 @@ class LlmViewModel : ViewModel() {
 
     private fun splitSuggestions(raw: String): List<String> =
         raw.lines()
-            .map {it.trim().removePrefix("-").removePrefix("*").trim()}
-            .map {it.replace(Regex("^\\d+[.)]\\s*"), "")}
+            .map { it.trim().removePrefix("-").removePrefix("*").trim().removeSurrounding("\"") }
+            .map { it.replace(Regex("^\\d+[.)]\\s*"), "").removeSurrounding("\"") }
             .filter { it.length in 3..120 }
             .take(4)
 
     private suspend fun publishSuggestions(suggestions: List<String>) {
         if (suggestions.isEmpty()) return
-        _messages.value = suggestions.map { ChatMessage("model", it) }
-
-        suggestions.forEachIndexed { index, text ->
-            val ids = findPictogramsFor(text)
-            if (ids.isEmpty()) return@forEachIndexed
-
-            val list = _messages.value.orEmpty().toMutableList()
-            if (index < list.size) {
-                list[index] = list[index].copy(pictogramIds = ids)
-                _messages.value = list
-            }
+        
+        val messages = suggestions.map { text ->
+            ChatMessage("model", text, findPictogramsFor(text))
         }
+        _messages.value = messages
     }
 
     fun clearChatError() {
@@ -414,7 +399,6 @@ class LlmViewModel : ViewModel() {
 
 
     override fun onCleared() {
-        super.onCleared()
         conversation?.close()
         engine?.close()
         conversation = null
