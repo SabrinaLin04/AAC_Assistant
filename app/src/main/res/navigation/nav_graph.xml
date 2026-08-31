@@ -28,4 +28,10 @@
         android:label="@string/title_credits"
         tools:layout="@layout/fragment_credits" />
 
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="it.lbsl.aacassistant.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile" />
+
 </navigation>

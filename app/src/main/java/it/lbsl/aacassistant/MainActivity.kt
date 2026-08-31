@@ -101,6 +101,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupLogoutRow()
+        setupProfileRow()
+    }
+    private fun setupProfileRow() {
+        binding.profileRow.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            navController.navigate(R.id.profileFragment)
+        }
     }
     private fun setupLogoutRow() {
         binding.logoutRow.setOnClickListener {
