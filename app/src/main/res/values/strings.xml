@@ -73,6 +73,8 @@
         <item quantity="other">Usata %1$d volte</item>
     </plurals>
 
+    <string name="action_close">Chiudi</string>
+
     <string name="error_load_contexts">Impossibile caricare i contesti</string>
     <string name="error_add_context">Impossibile creare il contesto</string>
     <string name="error_update_context">Impossibile aggiornare il contesto</string>
