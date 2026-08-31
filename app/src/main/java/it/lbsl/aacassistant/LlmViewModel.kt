@@ -292,11 +292,7 @@ class LlmViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Conversazione usa-e-getta per i suggerimenti: senza storia precedente
-     * il modello non ripropone le stesse frasi. Parametri piu' alti della chat
-     * normale perche' qui la varieta' e' desiderata.
-     */
+
     private fun newSuggestionConversation(): Conversation? {
         val eng = engine ?: return null
         return eng.createConversation(

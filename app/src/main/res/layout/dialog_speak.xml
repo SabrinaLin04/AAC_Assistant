@@ -10,8 +10,8 @@
         android:id="@+id/pictogramScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:visibility="gone">
+        android:scrollbars="horizontal"
+        android:visibility="visible">
 
         <LinearLayout
             android:id="@+id/pictogramRow"

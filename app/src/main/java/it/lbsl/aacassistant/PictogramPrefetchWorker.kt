@@ -11,12 +11,15 @@ import java.net.URL
 class PictogramPrefetchWorker(context: Context, params: WorkerParameters)
     : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+
+        //recupera gli identificatori dei pittogrammi principali dal repository e termina subito l'operazione in caso di lista vuota
         val ids = PictogramRepository.coreIds(applicationContext)
         if (ids.isEmpty()) return@withContext Result.success()
 
         val dir= PictogramRepository.pictogramDir(applicationContext)
         var failures= 0
 
+        //scorre gli id ed esegue il download dell'immagine in un file temporaneo, per poi rinominarlo solo a download completato evitando file corrotti
         ids.forEach { id ->
             val file = File(dir, "$id.png")
             if (file.exists()) return@forEach
@@ -31,7 +34,7 @@ class PictogramPrefetchWorker(context: Context, params: WorkerParameters)
             }
         }
 
-        //riproviamo solo se faila tutto
+        //comunica al work manager di riprogrammare l'esecuzione del task solo se tutti i tentativi di download delle immagini sono falliti
         if (failures == ids.size) Result.retry() else Result.success()
     }
 }
