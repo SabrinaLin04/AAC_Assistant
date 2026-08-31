@@ -44,9 +44,11 @@ class ChatAdapter (
         params.horizontalBias = if (isUser) 1f else 0f
         holder.binding.bubbleColumn.layoutParams = params
 
+        val context = holder.itemView.context
+
         if (isUser) {
             val drawable = GradientDrawable().apply {
-                setColor(ContextCompat.getColor(holder.itemView.context, R.color.bubble_user))
+                setColor(ContextCompat.getColor(context, R.color.bubble_user))
                 cornerRadii = floatArrayOf(
                     36f, 36f,
                     36f, 36f,
@@ -55,10 +57,10 @@ class ChatAdapter (
                 )
             }
             holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.m1_primary))
+            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.m1_primary))
         } else {
             val drawable = GradientDrawable().apply {
-                setColor(ContextCompat.getColor(holder.itemView.context, R.color.bubble_assistant))
+                setColor(ContextCompat.getColor(context, R.color.bubble_assistant))
                 cornerRadii = floatArrayOf(
                     4f, 4f,
                     36f, 36f,
@@ -67,43 +69,40 @@ class ChatAdapter (
                 )
             }
             holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(ContextCompat.getColor(holder.itemView.context, R.color.m1_surface))
+            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.m1_surface))
+        }
 
-            val strip = holder.binding.pictogramStrip
-            val context = holder.itemView.context
+        val strip = holder.binding.pictogramStrip
+        strip.removeAllViews()
 
-            strip.removeAllViews() //svuota le view aggiunte in precedenza per prevenire duplicazioni dovute al "view recycling"
+        if (message.pictogramIds.isEmpty()) {
+            strip.visibility = View.GONE
+        } else {
+            strip.visibility = View.VISIBLE
 
-            if (message.pictogramIds.isEmpty()) {
-                strip.visibility = View.GONE
-            } else {
-                strip.visibility = View.VISIBLE
+            val size = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_size)
+            val gap = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_gap)
 
-                val size = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_size)
-                val gap = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_gap)
-
-                message.pictogramIds.forEachIndexed { index, id ->
-                    val image = ImageView(context).apply {
-                        layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                            if (index > 0) marginStart = gap
-                        }
-                        scaleType = ImageView.ScaleType.FIT_CENTER
-                        contentDescription = null
-                        load(PictogramRepository.imageSource(context, id)) {   //preferisce il file locale
-                            crossfade(true)
-                            placeholder(R.drawable.ic_pictogram_placeholder)
-                            error(R.drawable.ic_pictogram_placeholder)
-                        }
+            message.pictogramIds.forEachIndexed { index, id ->
+                val image = ImageView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                        if (index > 0) marginStart = gap
                     }
-                    strip.addView(image)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    contentDescription = null
+                    load(PictogramRepository.imageSource(context, id)) {
+                        crossfade(true)
+                        placeholder(R.drawable.ic_pictogram_placeholder)
+                        error(R.drawable.ic_pictogram_placeholder)
+                    }
                 }
-
-                strip.contentDescription = message.text
+                strip.addView(image)
             }
+
+            strip.contentDescription = message.text
         }
 
         val star = holder.binding.favoriteStar
-        val context = holder.itemView.context
 
         if (isUser || message.text.isBlank()) {
             star.visibility = View.GONE
