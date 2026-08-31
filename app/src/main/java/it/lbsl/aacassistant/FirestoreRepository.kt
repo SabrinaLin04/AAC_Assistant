@@ -25,6 +25,13 @@ class FirestoreRepository {
         userDoc().set(profile, SetOptions.merge()).await()
     }
 
+    suspend fun getProfile(): UserProfile? =
+        userDoc().get().await().toObject(UserProfile::class.java)
+
+    suspend fun updateProfile(updates: Map<String, Any?>) {
+        userDoc().update(updates).await()
+    }
+
     suspend fun defaultContexts() {
         if (contexts().limit(1).get().await().isEmpty.not()) return
 
