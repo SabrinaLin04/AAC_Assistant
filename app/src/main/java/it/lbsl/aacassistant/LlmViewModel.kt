@@ -121,11 +121,10 @@ class LlmViewModel : ViewModel() {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
                 "Suggerisci brevi frasi in prima persona che l'utente potrebbe voler dire. " +
                 "Usa frasi semplici, dirette, di poche parole. Rispondi sempre in italiano. " +
-                "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                "Ogni frase deve essere completa. " +
                 "Non usare parentesi quadre, segnaposto o parole da completare. " +
                 "Non usare forme come confuso/a o stanco/a: scegli una sola forma. " +
-                "Scrivi i verbi all'infinito, come in una tabella di comunicazione: " +
-                "\"Io volere acqua\", \"Io avere bisogno di aiuto\", \"Io non capire\"."
+                "Scrivi i verbi all'infinito, come in una tabella di comunicazione."
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
@@ -343,15 +342,10 @@ class LlmViewModel : ViewModel() {
 
                 val prompt = situation + opener + " " +
                         "Scrivi una frase per riga, senza numerazione e senza commenti. " +
-                        "Ogni frase deve essere completa e pronunciabile così com'è. " +
+                        "Ogni frase deve essere completa." +
                         "Non usare parentesi quadre, segnaposto o parole da completare. " +
-                        "IMPORTANTE: usa i verbi solo all'infinito, mai coniugati. " +
-                        "Esempi del formato richiesto:\n" +
-                        "Io avere bisogno di aiuto\n" +
-                        "Io non capire\n" +
-                        "Io volere acqua\n" +
-                        "Io sentire dolore\n" +
-                        "Scrivi 4 frasi nuove con questo stesso formato, diverse dagli esempi."
+                        "IMPORTANTE: usa i verbi solo all'infinito, mai coniugati. "
+
 
                 val accumulated = StringBuilder()
 
