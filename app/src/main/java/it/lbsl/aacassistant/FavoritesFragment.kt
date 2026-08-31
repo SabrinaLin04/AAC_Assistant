@@ -1,15 +1,21 @@
 package it.lbsl.aacassistant
-import android.content.ClipData
+
+import androidx.appcompat.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.widget.LinearLayout
+import android.widget.HorizontalScrollView
+import coil.load
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentFavoritesBinding
 
@@ -39,8 +45,7 @@ class FavoritesFragment: Fragment() {
 
     private fun setupRecyclerView(){
         adapter = FavoritesAdapter{ favorite ->
-            viewModel.markAsUsed(favorite.id)
-            Snackbar.make(binding.root, R.string.favorite_used, Snackbar.LENGTH_SHORT).show()
+            showFavorite(favorite)
         }
         binding.favoritesRecycler.layoutManager= LinearLayoutManager(requireContext())
         binding.favoritesRecycler.adapter = adapter
@@ -64,6 +69,7 @@ class FavoritesFragment: Fragment() {
         }
     }
 
+    //gestisce la visibilità degli elementi dell'interfaccia alternando tra l'elenco dei preferiti e il messaggio di stato vuoto in base ai caricamenti
     private fun updateEmptyState(){
         val empty = viewModel.isEmpty.value == true
         val loading = viewModel.isLoading.value == true
@@ -71,6 +77,48 @@ class FavoritesFragment: Fragment() {
         binding.favoritesRecycler.isVisible = !empty
     }
 
+    //mostra un dialog contenente il testo e i pittogrammi del preferito selezionato e notifica il view model per incrementarne l'utilizzo
+    private fun showFavorite(favorite: Favorite) {
+        val view = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_speak, null)
+
+        view.findViewById<TextView>(R.id.speakText).text = favorite.text
+
+        val row = view.findViewById<LinearLayout>(R.id.pictogramRow)
+        val scroll = view.findViewById<HorizontalScrollView>(R.id.pictogramScroll)
+
+        row.removeAllViews()
+
+        if (favorite.pictogramIds.isEmpty()) {
+            scroll.visibility = View.GONE
+        } else {
+            scroll.visibility = View.VISIBLE
+            val size = resources.getDimensionPixelSize(R.dimen.pictogram_max_size)
+            val gap = resources.getDimensionPixelSize(R.dimen.pictogram_gap)
+
+            favorite.pictogramIds.forEach { id ->
+                val image = ImageView(requireContext()).apply {
+                    layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                        marginStart = gap
+                        marginEnd = gap
+                    }
+                    load(PictogramRepository.imageSource(requireContext(), id))
+                }
+                row.addView(image)
+            }
+
+            row.contentDescription = favorite.text
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setView(view)
+            .setPositiveButton(R.string.action_close, null)
+            .show()
+
+        viewModel.markAsUsed(favorite.id)
+    }
+
+    //implementa la funzionalità di scorrimento laterale per eliminare un elemento dalla lista offrendo la possibilità di annullare l'azione
     private fun setupSwipeToDelete(){
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT){
             override fun onMove(

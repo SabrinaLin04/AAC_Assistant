@@ -34,10 +34,10 @@ class ChatAdapter (
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val message = messageList[position]
-        val isUser = message.author == "user"
+        val isUser = message.author == "user" //determina l'autore per applicare l'allineamento corretto alle bolle della chat
 
         holder.binding.message = message
-        holder.binding.executePendingBindings()
+        holder.binding.executePendingBindings() //forza il re-layout immediato tramite Data Binding
 
         holder.binding.messageText.text = message.text
 
@@ -74,7 +74,7 @@ class ChatAdapter (
             val strip = holder.binding.pictogramStrip
             val context = holder.itemView.context
 
-            strip.removeAllViews()
+            strip.removeAllViews() //svuota le view aggiunte in precedenza per prevenire duplicazioni dovute al "view recycling"
 
             if (message.pictogramIds.isEmpty()) {
                 strip.visibility = View.GONE
@@ -125,7 +125,7 @@ class ChatAdapter (
     }
 
     fun refreshStars() {
-        notifyItemRangeChanged(0, itemCount)
+        notifyItemRangeChanged(0, itemCount) //aggiorna esclusivamente le viste visibili ricaricando lo stato corrente del pulsante "preferito"
     }
     fun updateMessages(newMessages: List<ChatMessage>) {
         val old= messageList
@@ -133,6 +133,7 @@ class ChatAdapter (
 
         when {
             //tutta la lista viene sostituita
+            //un approccio più robusto per il futuro consisterebbe nell'estendere ListAdapter e usare DiffUtil.ItemCallback, delegando a lui questi calcoli per ottenere animazioni fluide in automatico
             newMessages.size == old.size && newMessages != old && newMessages.size > 1 -> notifyDataSetChanged()
             newMessages.size - old.size > 1 -> notifyDataSetChanged()
             newMessages.size > old.size -> notifyItemInserted(newMessages.lastIndex)

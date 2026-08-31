@@ -91,6 +91,7 @@ class ContextsFragment : Fragment() {
         binding.contextsRecycler.isVisible = !empty
     }
 
+    //implementa la funzionalità di scorrimento laterale sugli elementi della lista per eliminarli offrendo un'opzione di annullamento
     private fun setupSwipeToDelete() {
         val callback = object : ItemTouchHelper.SimpleCallback(
             0,
@@ -120,6 +121,7 @@ class ContextsFragment : Fragment() {
         ItemTouchHelper(callback).attachToRecyclerView(binding.contextsRecycler)
     }
 
+    //mostra una finestra di dialogo che permette all'utente di inserire i dati per un nuovo contesto o di modificarne uno esistente
     private fun showContextDialog(contextToEdit: UserContext?) {
         val isEditing = contextToEdit != null
 

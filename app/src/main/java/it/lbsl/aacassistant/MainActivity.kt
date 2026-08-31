@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
         schedulePictogramPrefetch()
     }
 
+    //pianifica un task in background per precaricare i pittogrammi quando il dispositivo è connesso a internet per ottimizzare le prestazioni
     private fun schedulePictogramPrefetch() {
         val prefetch = OneTimeWorkRequestBuilder<PictogramPrefetchWorker>()
             .setConstraints(
@@ -66,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         WorkManager.getInstance(this)
             .enqueueUniqueWork("pictogram_prefetch", ExistingWorkPolicy.KEEP, prefetch)
     }
+
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -79,6 +81,8 @@ class MainActivity : AppCompatActivity() {
             insets
         }
     }
+
+    //configura il sistema di navigazione collegando il nav controller alla toolbar e al menu laterale per gestire gli spostamenti tra i vari fragment
     private fun setupNavigation() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -108,6 +112,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean =
         navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
 
+    //crea e mostra un dialog di conferma per l'uscita dall'account
     private fun confirmLogout() {
         val dialog = MaterialAlertDialogBuilder(
             this,
@@ -162,6 +167,7 @@ class MainActivity : AppCompatActivity() {
     private fun dpToPx(dp: Int): Int =
         (dp * resources.displayMetrics.density).toInt()
 
+    //esegue la disconnessione dell'utente tramite firebase auth e lo reindirizza alla schermata di benvenuto ripulendo lo stack di navigazione
     private fun logout() {
         AuthUI.getInstance()
             .signOut(this)
