@@ -157,7 +157,6 @@ class SuggestFragment: Fragment() {
             when (state) {
                 is ModelState.Idle -> { }
                 is ModelState.Initializing -> showLoading(getString(state.messageRes))
-                is ModelState.Downloading -> showLoading(getString(R.string.model_downloading, state.percent))
                 is ModelState.Ready -> showChat( demo = false)
                 is ModelState.DemoMode -> showChat(demo = true)
                 is ModelState.Error -> showError(
@@ -207,7 +206,7 @@ class SuggestFragment: Fragment() {
             }
 
             if (state is ChatState.Error) {
-                Snackbar.make(binding.root, getString(state.messageRes), Snackbar.LENGTH_LONG)
+                Snackbar.make(binding.root, getString(state.messageRes), Snackbar.LENGTH_LONG).show()
                 viewModel.clearChatError()
             }
         }
@@ -234,6 +233,5 @@ class SuggestFragment: Fragment() {
         binding.errorMessage.text = message
     }
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
+
 }
