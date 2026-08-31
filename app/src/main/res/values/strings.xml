@@ -111,4 +111,15 @@
 
     <string name="action_suggest">Suggerisci frasi</string>
     <string name="demo_mode_banner">Modalità dimostrativa — modello non caricato</string>
+
+    <string name="title_profile">Profilo</string>
+    <string name="profile_display_name">Nome visualizzato</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_password">Nuova password (lascia vuoto per non cambiare)</string>
+    <string name="profile_save">Salva profilo</string>
+    <string name="profile_updated_success">Profilo aggiornato con successo</string>
+    <string name="error_load_profile">Errore nel caricamento del profilo</string>
+    <string name="error_update_profile">Errore nell\'aggiornamento del profilo</string>
+    <string name="error_recent_login_required">Per motivi di sicurezza, devi uscire e rientrare per cambiare email o password</string>
+    <string name="error_provider_password_unsupported">Questo account usa l\'accesso Google: la password non può essere cambiata qui</string>
 </resources>
