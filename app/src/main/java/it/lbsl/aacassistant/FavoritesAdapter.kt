@@ -31,7 +31,6 @@ class FavoritesAdapter (
             favorite.usageCount,
             favorite.usageCount
         )
-        holder.binding.root.setOnClickListener {onUse(favorite)}
 
         val picto = holder.binding.favoritePictogram
         val pictogramId = favorite.pictogramIds.firstOrNull()
