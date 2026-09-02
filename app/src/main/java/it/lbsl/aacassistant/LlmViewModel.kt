@@ -83,9 +83,12 @@ class LlmViewModel : ViewModel() {
 
     private var contextDescription: String? = null
 
+    private var contextName: String? = null
+
     private var lastIncoming: String? = null
 
-    private var lastDemoReply: String? = null
+
+    private var metricsLogger: MetricsLogger? = null
 
     companion object {
         private const val MODEL_FILENAME = "gemma3-1b-it-int4.litertlm"
@@ -93,6 +96,7 @@ class LlmViewModel : ViewModel() {
 
     //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
     fun getModel(context: Context) {
+        metricsLogger = MetricsLogger(context.filesDir)
         viewModelScope.launch {
             PictogramRepository.loadCoreIndex(context)
 
@@ -223,9 +227,10 @@ class LlmViewModel : ViewModel() {
     }
 
     //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
-    fun setContext(description: String?) {
+    fun setContext(name: String?, description: String?) {
         if (description == contextDescription) return
 
+        contextName = name
         contextDescription = description
         lastIncoming = null
 
@@ -235,84 +240,12 @@ class LlmViewModel : ViewModel() {
         _messages.value = emptyList()
         _chatState.value = ChatState.Idle
     }
-    /*      POSSIBILE IMPLEMENTAZIONE (da chiedere all'esperto di dominio)
-        //invia il testo dell'utente al modello gestendo la risposta asincrona a blocchi e aggiornando l'interfaccia o delega alla modalità demo se attiva
-         fun sendMessage(text: String) {
-            if (_modelState.value is ModelState.DemoMode) {
-                sendDemoMessage(text)
-                return
-            }
-            val conv = conversation ?: return
-
-            viewModelScope.launch {
-                _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
-                _chatState.value = ChatState.Generating
-                _messages.value = _messages.value.orEmpty() + ChatMessage("model", "")
-
-                val prompt = "Qualcuno mi ha detto o chiesto: \"$text\". " +
-                        "Suggerisci una frase brevissima che potrei rispondere."
-
-                val accumulated = StringBuilder()
-
-                conv.sendMessageAsync(prompt)
-                    .catch { error ->
-                        val list = _messages.value.orEmpty().toMutableList()
-                        if (list.isNotEmpty() && list.last().text.isBlank()) {
-                            list.removeAt(list.lastIndex)
-                            _messages.value = list
-                        }
-                        _chatState.value = ChatState.Error(
-                            messageRes = R.string.error_generation,
-                            detail = error.localizedMessage
-                        )
-                    }
-                    .collect { chunk ->
-                        accumulated.append(chunk.toString())
-
-                        val updatedList = _messages.value.orEmpty().toMutableList()
-                        val last = updatedList.last()
-                        updatedList[updatedList.lastIndex] = last.copy(
-                            text = accumulated.toString()
-                        )
-                        _messages.value = updatedList
-                    }
-
-                resolvePictogram(accumulated.toString())
-
-                if (_chatState.value is ChatState.Generating) {
-                    _chatState.value = ChatState.Idle
-                }
-            }
-
-        }
-
-    */
 
     fun sendMessage(text: String) {
         viewModelScope.launch {
             lastIncoming = text
             val ids = findPictogramsFor(text)
             _messages.value = _messages.value.orEmpty() + ChatMessage("user", text, ids)
-        }
-    }
-
-    //simula una risposta del modello selezionando casualmente una frase dalle opzioni demo
-    private fun sendDemoMessage(text: String) {
-        viewModelScope.launch {
-            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
-            _chatState.value = ChatState.Generating
-
-            delay(600)
-
-            val pool = pickDemoSuggestions()
-            val reply = pool.filterNot { it == lastDemoReply }.randomOrNull()
-                ?: pool.random()
-            lastDemoReply = reply
-
-            _messages.value= _messages.value.orEmpty() + ChatMessage("model", reply)
-            _chatState.value= ChatState.Idle
-
-            resolvePictogram(reply)
         }
     }
 
@@ -345,6 +278,10 @@ class LlmViewModel : ViewModel() {
 
             val accumulated = StringBuilder()
 
+            val startTime = System.currentTimeMillis()
+            var firstTokenTime: Long? = null
+            var tokenCount = 0
+
             conv.sendMessageAsync(prompt)
                 .catch { error ->
                     _chatState.value = ChatState.Error(
@@ -352,7 +289,29 @@ class LlmViewModel : ViewModel() {
                         detail = error.localizedMessage
                     )
                 }
-                .collect { chunk -> accumulated.append(chunk.toString()) }
+                .collect { chunk ->
+                    if (firstTokenTime == null) {
+                        firstTokenTime = System.currentTimeMillis()
+                    }
+                    tokenCount++
+                    accumulated.append(chunk.toString()) }
+
+            val endTime = System.currentTimeMillis()
+            val totalMs = endTime - startTime
+            val ttftMs = (firstTokenTime ?: endTime) - startTime
+
+            withContext(Dispatchers.IO) {metricsLogger?.log(MetricsEntry(
+                timestamp = java.time.Instant.now().toString(),
+                ttftMs = ttftMs,
+                totalMs = totalMs,
+                nTokens = tokenCount,
+                tokPerSec = if (totalMs > 0) tokenCount * 1000.0 / totalMs else 0.0,
+                backend = "GPU",
+                model = "gemma3-1b-it-int4",
+                contextId = contextName  ?: "none"
+            ))
+            }
+
 
             publishSuggestions(splitSuggestions(accumulated.toString()))
 
