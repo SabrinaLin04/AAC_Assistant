@@ -2,6 +2,7 @@ package it.lbsl.aacassistant
 
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
@@ -19,6 +20,15 @@ class FavoritesViewModel : ViewModel() {
     val errorMessage: LiveData<Int?> = _errorMessage
 
     val isEmpty: LiveData<Boolean> = _favorites.map { it.isEmpty() }
+
+    //vero quando la lista e' vuota e il caricamento e' finito
+    val showEmptyState: LiveData<Boolean> = MediatorLiveData<Boolean>().apply {
+        fun update() {
+            value = (_favorites.value?.isEmpty() == true) && (_isLoading.value != true)
+        }
+        addSource(_favorites) { update() }
+        addSource(_isLoading) { update() }
+    }
 
     init {
         loadFavorites()

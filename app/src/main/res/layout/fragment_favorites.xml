@@ -1,7 +1,11 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <data />
+    <data>
+        <variable
+            name="viewModel"
+            type="it.lbsl.aacassistant.FavoritesViewModel" />
+    </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -12,6 +16,7 @@
             android:id="@+id/favoritesRecycler"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            app:isVisible="@{!viewModel.isLoading}"
             android:clipToPadding="false"
             android:paddingVertical="8dp"
             app:layout_constraintTop_toTopOf="parent"
@@ -23,8 +28,7 @@
             android:id="@+id/progressBar"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:indeterminateTint="?attr/colorPrimary"
-            android:visibility="gone"
+            app:isVisible="@{viewModel.isLoading}"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -34,11 +38,11 @@
             android:id="@+id/emptyState"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            app:isVisible="@{viewModel.showEmptyState}"
             android:gravity="center"
             android:padding="32dp"
-            android:textAppearance="@style/TextAppearance.App.Caption"
             android:text="@string/favorites_empty"
-            android:visibility="gone"
+            android:textAppearance="@style/TextAppearance.App.Body"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"

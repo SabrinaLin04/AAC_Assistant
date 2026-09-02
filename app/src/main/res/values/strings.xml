@@ -19,7 +19,7 @@
     <string name="error_unknown">Errore sconosciuto</string>
     <string name="error_generation">Errore durante la generazione</string>
 
-    <string name="chat_input_hint">Scrivi qualcosa…</string>
+    <string name="chat_input_hint">Scrivi una frase all\'infinito…</string>
     <string name="chat_send">Invia</string>
     <string name="chat_author_user">Tu</string>
     <string name="chat_author_assistant">Assistente</string>

@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -28,6 +27,7 @@ class ContextsFragment : Fragment() {
     ): View {
         _binding = FragmentContextsBinding.inflate(inflater, container, false)
         binding.lifecycleOwner = viewLifecycleOwner
+        binding.viewModel = viewModel
         return binding.root
     }
 
@@ -70,25 +70,11 @@ class ContextsFragment : Fragment() {
         viewModel.activeContextId.observe(viewLifecycleOwner) { id ->
             adapter.setActiveId(id)
         }
-        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
-            binding.progressBar.isVisible = loading
-            updateEmptyState()
-        }
-        viewModel.isEmpty.observe(viewLifecycleOwner) {
-            updateEmptyState()
-        }
         viewModel.errorMessage.observe(viewLifecycleOwner) { resId ->
             resId ?: return@observe
             Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_LONG).show()
             viewModel.clearError()
         }
-    }
-
-    private fun updateEmptyState() {
-        val empty = viewModel.isEmpty.value == true
-        val loading = viewModel.isLoading.value == true
-        binding.emptyState.isVisible = empty && !loading
-        binding.contextsRecycler.isVisible = !empty
     }
 
     //implementa la funzionalità di scorrimento laterale sugli elementi della lista per eliminarli offrendo un'opzione di annullamento
