@@ -39,4 +39,11 @@
     </style>
 
     <style name="Theme.AACAssistant" parent="Base.Theme.AACAssistant" />
+
+    <style name="Theme.AACAssistant.FirebaseUI" parent="FirebaseUI">
+        <item name="colorPrimary">@color/m_primary</item>
+        <item name="colorPrimaryDark">@color/m_primary</item>
+        <item name="colorAccent">@color/m_primary</item>
+        <item name="android:statusBarColor">@color/m_primary</item>
+    </style>
 </resources>

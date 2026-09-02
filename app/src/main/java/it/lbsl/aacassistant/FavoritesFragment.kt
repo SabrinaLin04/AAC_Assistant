@@ -32,6 +32,7 @@ class FavoritesFragment: Fragment() {
     ): View? {
         _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
         binding.lifecycleOwner = viewLifecycleOwner
+        binding.viewModel = viewModel
         return binding.root
     }
 
@@ -55,26 +56,11 @@ class FavoritesFragment: Fragment() {
         viewModel.favorites.observe(viewLifecycleOwner) { list ->
             adapter.submitList(list)
         }
-        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
-            binding.progressBar.isVisible = loading
-            updateEmptyState()
-        }
-        viewModel.isEmpty.observe(viewLifecycleOwner){
-            updateEmptyState()
-        }
         viewModel.errorMessage.observe(viewLifecycleOwner){ resId ->
             resId ?: return@observe
             Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_SHORT).show()
             viewModel.clearError()
         }
-    }
-
-    //gestisce la visibilità degli elementi dell'interfaccia alternando tra l'elenco dei preferiti e il messaggio di stato vuoto in base ai caricamenti
-    private fun updateEmptyState(){
-        val empty = viewModel.isEmpty.value == true
-        val loading = viewModel.isLoading.value == true
-        binding.emptyState.isVisible = empty && !loading
-        binding.favoritesRecycler.isVisible = !empty
     }
 
     //mostra un dialog contenente il testo e i pittogrammi del preferito selezionato e notifica il view model per incrementarne l'utilizzo

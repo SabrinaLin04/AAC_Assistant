@@ -124,7 +124,7 @@ class LlmViewModel : ViewModel() {
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
                 "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
-                "Ogni frase: 2-5 parole, italiano semplice, una per riga. " +
+                "Ogni frase: 3-4 parole, italiano semplice, una per riga. " +
                 "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
         return contextDescription
@@ -335,12 +335,12 @@ class LlmViewModel : ViewModel() {
 
             val prompt = lastIncoming?.let {
                 //se qualcuno ha scritto qualcosa il primo suggerisci da frasi inerenti
-                "Qualcuno mi ha detto: \"$it\". Suggerisci 4 frasi che potrei rispondere."
+                "Qualcuno mi ha detto: \"$it\". Suggerisci 5 frasi che potrei rispondere."
             } ?: listOf(
-                "Suggerisci 4 frasi.",
-                "Proponi 4 frasi utili adesso.",
-                "Scrivi 4 frasi possibili.",
-                "Genera 4 frasi per questo momento."
+                "Suggerisci 5 frasi.",
+                "Proponi 5 frasi utili adesso.",
+                "Scrivi 5 frasi possibili.",
+                "Genera 5 frasi per questo momento."
             ).random()
 
             val accumulated = StringBuilder()
@@ -394,7 +394,6 @@ class LlmViewModel : ViewModel() {
             .filterNot { it.contains("[") || it.contains("/") || it.contains(":") }
             .filter { it.length in 3..80 }
             .take(4)
-
     private suspend fun publishSuggestions(suggestions: List<String>) {
         if (suggestions.isEmpty()) return
 
