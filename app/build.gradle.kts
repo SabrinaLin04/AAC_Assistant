@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
+    alias(libs.plugins.legacy.kapt)
 }
 
 android {
@@ -35,6 +37,8 @@ android {
 
     buildFeatures {
         viewBinding = true
+        dataBinding = true
+        buildConfig = true
     }
 
     configurations.all {
@@ -60,7 +64,18 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.material3)
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.firebaseui:firebase-ui-auth:9.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+    implementation(libs.coil)
 }

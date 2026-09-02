@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "361924728615",
+    "project_id": "aac-assistant",
+    "storage_bucket": "aac-assistant.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:361924728615:android:c8986305517809966b3b02",
+        "android_client_info": {
+          "package_name": "it.lbsl.aacassistant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "361924728615-3nj67qdif0qdgfv1nghqmar2u9gp5t69.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "it.lbsl.aacassistant",
+            "certificate_hash": "5f8396af48393695808b2f256ffa5929d2da387e"
+          }
+        },
+        {
+          "client_id": "361924728615-pfd5k5lvvjf3q8o083c5ltulkbnui3tf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoAQaDFCIIsInLUkb9ApmKRmw0wfMG4Mw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "361924728615-pfd5k5lvvjf3q8o083c5ltulkbnui3tf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

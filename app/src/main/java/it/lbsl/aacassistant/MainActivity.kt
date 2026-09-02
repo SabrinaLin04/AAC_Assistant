@@ -1,151 +1,189 @@
 package it.lbsl.aacassistant
 
-import android.graphics.Color
-import android.graphics.PorterDuff
-import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.View
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
+import androidx.core.view.updatePadding
+import android.content.Intent
+import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.databinding.DataBindingUtil
+import androidx.navigation.NavController
+import androidx.activity.addCallback
+import androidx.core.view.GravityCompat
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupWithNavController
 import it.lbsl.aacassistant.databinding.ActivityMainBinding
+import androidx.navigation.ui.navigateUp
+import com.firebase.ui.auth.AuthUI
+import androidx.appcompat.app.AlertDialog
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: LlmViewModel by viewModels()
-    private lateinit var chatAdapter: ChatAdapter
+    private lateinit var navController: NavController
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding.lifecycleOwner = this
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { view, insets ->
+        setupWindowInsets()
+        setSupportActionBar(binding.toolbar)
+        setupNavigation()
+
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
+        schedulePictogramPrefetch()
+    }
+
+    //pianifica un task in background per precaricare i pittogrammi quando il dispositivo è connesso a internet per ottimizzare le prestazioni
+    private fun schedulePictogramPrefetch() {
+        val prefetch = OneTimeWorkRequestBuilder<PictogramPrefetchWorker>()
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            ).build()
+
+        WorkManager.getInstance(this)
+            .enqueueUniqueWork("pictogram_prefetch", ExistingWorkPolicy.KEEP, prefetch)
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
 
-            val bottomPadding = maxOf(systemBars.bottom, imeInsets.bottom)
-
-            view.setPadding(
-                systemBars.left,
-                systemBars.top,
-                systemBars.right,
-                bottomPadding
+            binding.toolbar.updatePadding(
+                top = systemBars.top,
+                left = systemBars.left,
+                right = systemBars.right
             )
+
             insets
         }
-
-        setupRecyclerView()
-        setupInputBar()
-        observeViewModel()
-
-        viewModel.getModel(applicationContext)
     }
 
-    private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter()
-        val layoutManager = LinearLayoutManager(this)
-        layoutManager.stackFromEnd = true
-        binding.recyclerView.layoutManager = layoutManager
-        binding.recyclerView.adapter = chatAdapter
-        binding.recyclerView.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
-            if (bottom < oldBottom) {
-                binding.recyclerView.postDelayed({
-                    if (chatAdapter.itemCount > 0) {
-                        binding.recyclerView.scrollToPosition(chatAdapter.itemCount - 1)
-                    }
-                }, 100)
-            }
-        }
-    }
+    //configura il sistema di navigazione collegando il nav controller alla toolbar e al menu laterale per gestire gli spostamenti tra i vari fragment
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
 
-    private fun setupInputBar() {
-        updateSendButtonTint(false)
+        appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
+        binding.toolbar.setupWithNavController(navController, appBarConfiguration)
+        binding.drawerMenuView.setupWithNavController(navController)
 
-        binding.sendButton.setOnClickListener {
-            val text = binding.messageInput.text.toString().trim()
-            if (text.isNotBlank()) {
-                viewModel.sendMessage(text)
-                binding.messageInput.text?.clear()
+        //listener per ogni cambio di destinazione, abilita la chiusura automatica del drawer
+        //una volta selezionata una nuova destinazione
+        navController.addOnDestinationChangedListener { _, _, _ ->
+            if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
             }
         }
 
-        binding.messageInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val isGenerating = viewModel.chatState.value is ChatState.Generating
-                val enabled = !s.isNullOrBlank() && !isGenerating
-                binding.sendButton.isEnabled = enabled
-                updateSendButtonTint(enabled)
-            }
-        })
+        setupLogoutRow()
+        setupProfileRow()
     }
-
-    private fun updateSendButtonTint(enabled: Boolean) {
-        val color = if (enabled) Color.WHITE else Color.parseColor("#BBBBBB")
-        binding.sendButton.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+    private fun setupProfileRow() {
+        binding.profileRow.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            navController.navigate(R.id.profileFragment)
+        }
     }
-
-    private fun observeViewModel() {
-
-        viewModel.modelState.observe(this) { state ->
-            when (state) {
-                is ModelState.Idle -> { }
-                is ModelState.Initializing -> showLoading(state.message)
-                is ModelState.Downloading -> showLoading("Downloading: ${state.percent}%")
-                is ModelState.Ready -> showChat()
-                is ModelState.Error -> showError(state.cause)
-            }
-        }
-
-        viewModel.messages.observe(this) { messages ->
-            chatAdapter.updateMessages(messages)
-            if (messages.isNotEmpty()) {
-                binding.recyclerView.smoothScrollToPosition(messages.lastIndex)
-            }
-        }
-
-        viewModel.chatState.observe(this) { state ->
-            val isGenerating = state is ChatState.Generating
-            binding.messageInput.isEnabled = !isGenerating
-            val enabled = !isGenerating && !binding.messageInput.text.isNullOrBlank()
-            binding.sendButton.isEnabled = enabled
-            updateSendButtonTint(enabled)
-
-            if (isGenerating) {
-                binding.statusIndicator.text = "Generating..."
-                binding.statusIndicator.setTextColor(Color.parseColor("#FF9800"))
-            } else {
-                binding.statusIndicator.text = "Available"
-                binding.statusIndicator.setTextColor(Color.parseColor("#4CAF50"))
-            }
+    private fun setupLogoutRow() {
+        binding.logoutRow.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            confirmLogout()
         }
     }
 
-    private fun showLoading(message: String) {
-        binding.loadingGroup.visibility = View.VISIBLE
-        binding.errorGroup.visibility = View.GONE
-        binding.chatGroup.visibility = View.GONE
-        binding.loadingText.text = message
+    override fun onSupportNavigateUp(): Boolean =
+        navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+
+    //crea e mostra un dialog di conferma per l'uscita dall'account
+    private fun confirmLogout() {
+        val dialog = MaterialAlertDialogBuilder(
+            this,
+            R.style.ThemeOverlay_AACAssistant_Dialog
+        )
+            .setTitle(R.string.logout_confirm_title)
+            .setMessage(R.string.logout_confirm_message)
+            .setPositiveButton(R.string.action_logout) { _, _ -> logout() }
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            val exitButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE) as? com.google.android.material.button.MaterialButton
+            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE) as? com.google.android.material.button.MaterialButton
+
+            exitButton?.apply {
+                backgroundTintList = ContextCompat.getColorStateList(context, R.color.m_primary)
+                setTextColor(ContextCompat.getColor(context, R.color.m1_primary))
+                cornerRadius = dpToPx(22)
+                insetTop = 0
+                insetBottom = 0
+            }
+
+            cancelButton?.apply {
+                backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.transparent)
+                setTextColor(ContextCompat.getColor(context, R.color.m_primary))
+                strokeColor = ContextCompat.getColorStateList(context, R.color.m_primary)
+                strokeWidth = dpToPx(1)
+                cornerRadius = dpToPx(22)
+                insetTop = 0
+                insetBottom = 0
+            }
+
+            listOfNotNull(exitButton, cancelButton).forEach { button ->
+                button.isAllCaps = false
+                button.minHeight = dpToPx(44)
+                button.setPadding(dpToPx(20), 0, dpToPx(20), 0)
+
+                (button.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                    params.width = 0
+                    params.weight = 1f
+                    params.marginStart = dpToPx(6)
+                    params.marginEnd = dpToPx(6)
+                    button.layoutParams = params
+                }
+            }
+        }
+
+        dialog.show()
     }
 
-    private fun showChat() {
-        binding.loadingGroup.visibility = View.GONE
-        binding.errorGroup.visibility = View.GONE
-        binding.chatGroup.visibility = View.VISIBLE
-    }
+    private fun dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
 
-    private fun showError(message: String) {
-        binding.loadingGroup.visibility = View.GONE
-        binding.errorGroup.visibility = View.VISIBLE
-        binding.chatGroup.visibility = View.GONE
-        binding.errorMessage.text = message
+    //esegue la disconnessione dell'utente tramite firebase auth e lo reindirizza alla schermata di benvenuto ripulendo lo stack di navigazione
+    private fun logout() {
+        AuthUI.getInstance()
+            .signOut(this)
+            .addOnCompleteListener {
+                val intent = Intent(this, WelcomeActivity::class.java)
+                intent.flags =
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
     }
 }

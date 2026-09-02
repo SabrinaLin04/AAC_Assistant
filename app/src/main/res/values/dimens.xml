@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="bubble_width_percent" format="float" type="dimen">0.78</item>
+    <dimen name="pictogram_max_size">160dp</dimen>
+    <dimen name="screen_margin">16dp</dimen>
+    <dimen name="card_spacing">16dp</dimen>
+    <dimen name="pictogram_gap">4dp</dimen>
+    <dimen name="pictogram_strip_size">88dp</dimen>
+    <dimen name="pictogram_strip_gap">6dp</dimen>
+</resources>

@@ -17,24 +17,29 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import androidx.annotation.StringRes
+import kotlinx.coroutines.delay
 
 sealed interface ModelState {
     object Idle : ModelState
-    data class Downloading(val percent: Int) : ModelState
-    data class Initializing(val message: String) : ModelState
+    data class Initializing(@StringRes val messageRes: Int) : ModelState
     object Ready : ModelState
-    data class Error(val cause: String) : ModelState
+
+    object DemoMode : ModelState
+    data class Error(@StringRes val messageRes: Int, val detail: String? = null) : ModelState
 }
 
 sealed interface ChatState {
     object Idle : ChatState
     object Generating : ChatState
-    data class Error(val cause: String) : ChatState
+    data class Error(@StringRes val messageRes: Int, val detail: String? = null) : ChatState
 }
 
 data class ChatMessage(
     val author: String,
-    val text: String
+    val text: String,
+    val pictogramIds: List<Int> = emptyList(),
+    val id: Long = System.nanoTime()
 )
 
 
@@ -46,31 +51,63 @@ class LlmViewModel : ViewModel() {
 
     private val _chatState = MutableLiveData<ChatState>(ChatState.Idle)
     val chatState: LiveData<ChatState> = _chatState
-
     private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
     val messages: LiveData<List<ChatMessage>> = _messages
 
+    private val demoSuggestions = mapOf(
+        "pasto" to listOf(
+            "Ho fame.", "Vorrei ancora un po', per favore.",
+            "Ho finito, grazie.", "Posso avere dell'acqua?"
+        ),
+        "medico" to listOf(
+            "Mi fa male qui.", "Il dolore è forte.",
+            "Non capisco, può ripetere?", "Vorrei che mia madre restasse con me."
+        ),
+        "scuola" to listOf(
+            "Non ho capito l'esercizio.", "Posso andare in bagno?",
+            "Ho bisogno di aiuto.", "Ho finito il compito."
+        ),
+        "casa" to listOf(
+            "Vorrei riposare.", "Ho voglia di uscire.",
+            "Posso guardare la televisione?", "Mi sento stanco."
+        )
+    )
+
+    private val demoFallback = listOf(
+        "Ho bisogno di aiuto.", "Sì, grazie.",
+        "No, preferisco di no.", "Vorrei riposare un momento."
+    )
+
     private var engine: Engine? = null
     private var conversation: Conversation? = null
+
+    private var contextDescription: String? = null
+
+    private var lastIncoming: String? = null
+
+    private var lastDemoReply: String? = null
 
     companion object {
         private const val MODEL_FILENAME = "gemma3-1b-it-int4.litertlm"
     }
 
+    //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
     fun getModel(context: Context) {
         viewModelScope.launch {
+            PictogramRepository.loadCoreIndex(context)
+
             try {
                 val modelFile = File(context.filesDir, MODEL_FILENAME)
 
                 if (!modelFile.exists()) {
-                    val source = File("/tmp/$MODEL_FILENAME")
+                    val source = File("/data/local/tmp/$MODEL_FILENAME")
                     if (source.exists()) {
-                        _modelState.value = ModelState.Initializing("Copying model...")
+                        _modelState.value = ModelState.Initializing(R.string.model_copying)
                         withContext(Dispatchers.IO) {
                             source.copyTo(modelFile)
                         }
                     } else {
-                        _modelState.value = ModelState.Error("Model not found on device")
+                        _modelState.value = ModelState.DemoMode
                         return@launch
                     }
                 }
@@ -78,15 +115,53 @@ class LlmViewModel : ViewModel() {
                 loadEngine(modelFile.absolutePath, context)
 
             } catch (e: Exception) {
-                _modelState.value = ModelState.Error(
-                    e.localizedMessage ?: "Unknown error"
-                )
+                _modelState.value = ModelState.DemoMode
             }
         }
     }
 
+    //costruisce le istruzioni di sistema per il modello integrando la descrizione del contesto attuale se disponibile
+    private fun buildSystemPrompt(): String {
+        val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
+                "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
+                "Ogni frase: 3-4 parole, italiano semplice, una per riga. " +
+                "Nessuna numerazione, nessuna virgoletta, nessun commento."
+
+        return contextDescription
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "$base\n\nSituazione: $it" }
+            ?: base
+    }
+
+    //seleziona un set di frasi preimpostate per la modalità demo in base alla parola chiave del contesto attivo
+    private fun pickDemoSuggestions(): List<String> {
+        val ctx = contextDescription?.lowercase() ?: return demoFallback
+        return demoSuggestions.entries
+            .firstOrNull { (key, _) -> ctx.contains(key) }
+            ?.value
+            ?: demoFallback
+    }
+
+    //chiude l'eventuale conversazione precedente e ne avvia una nuova configurando il prompt di sistema e i parametri di campionamento
+    private fun createConversation() {
+        val eng = engine ?: return
+
+        conversation?.close()
+
+        val convConfig = ConversationConfig(
+            systemInstruction = Contents.of(buildSystemPrompt()),
+            samplerConfig = SamplerConfig(
+                topK = 40,
+                topP = 0.95,
+                temperature = 0.8
+            )
+        )
+        conversation = eng.createConversation(convConfig)
+    }
+
+    //carica e inizializza il motore litert in un thread secondario specificando il percorso del modello e l'uso della gpu
     private suspend fun loadEngine(modelPath: String, context: Context) {
-        _modelState.value = ModelState.Initializing("Loading model...")
+        _modelState.value = ModelState.Initializing(R.string.model_initializing)
 
         val loadedEngine = withContext(Dispatchers.IO) {
             val engineConfig = EngineConfig(
@@ -100,52 +175,243 @@ class LlmViewModel : ViewModel() {
         }
 
         engine = loadedEngine
-
-        val convConfig = ConversationConfig(
-            systemInstruction = Contents.of(
-                "You are a helpful assistant. Answer in Italian, clearly and concisely."
-            ),
-            samplerConfig = SamplerConfig(
-                topK = 20,
-                topP = 0.95,
-                temperature = 0.7
-            )
-        )
-        conversation = loadedEngine.createConversation(convConfig)
-
+        createConversation()
         _modelState.value = ModelState.Ready
     }
 
-    fun sendMessage(text: String) {
-        val conv = conversation ?: return
+    private val stopwords = setOf(
+        "gli", "uno", "una", "con", "per", "tra", "fra",
+        "del", "dello", "della", "dei", "degli", "delle",
+        "all", "allo", "alla", "agli", "alle",
+        "dal", "dallo", "dalla", "dai", "dagli", "dalle",
+        "nel", "nello", "nella", "nei", "negli", "nelle",
+        "sul", "sullo", "sulla", "sui", "sugli", "sulle",
+        "che"
+    )
 
+    //analizza la frase filtrando le stopword per trovare e restituire fino a tre identificatori di pittogrammi univoci corrispondenti
+    private suspend fun findPictogramsFor(sentence: String): List<Int> {
+        val words = sentence
+            .lowercase()
+            .split(Regex("[^\\p{L}]+"))
+            .filter { it.length > 2 && it !in stopwords }
+            .take(6)
+
+        val ids = mutableListOf<Int>()
+
+        for (word in words) {
+            val id = PictogramRepository.findPictogram(word)
+
+            if (id != null && id !in ids) { //evita duplicati perche' due parole diverse possono corrispondere allo stesso pittogramma
+                ids.add(id)
+            }
+            if (ids.size >= 3) break
+        }
+
+        return ids
+    }
+
+    //cerca i pittogrammi per la frase passata e li associa all'ultimo messaggio presente nella cronologia della chat
+    private suspend fun resolvePictogram(sentence: String) {
+        val ids = findPictogramsFor(sentence)
+        if (ids.isEmpty()) return
+
+        val list = _messages.value.orEmpty().toMutableList()
+        if (list.isEmpty()) return
+        list[list.lastIndex] = list.last().copy(pictogramIds = ids)
+        _messages.value = list
+    }
+
+    //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
+    fun setContext(description: String?) {
+        if (description == contextDescription) return
+
+        contextDescription = description
+        lastIncoming = null
+
+        if (engine != null) {
+            createConversation()
+        }
+        _messages.value = emptyList()
+        _chatState.value = ChatState.Idle
+    }
+    /*      POSSIBILE IMPLEMENTAZIONE (da chiedere all'esperto di dominio)
+        //invia il testo dell'utente al modello gestendo la risposta asincrona a blocchi e aggiornando l'interfaccia o delega alla modalità demo se attiva
+         fun sendMessage(text: String) {
+            if (_modelState.value is ModelState.DemoMode) {
+                sendDemoMessage(text)
+                return
+            }
+            val conv = conversation ?: return
+
+            viewModelScope.launch {
+                _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
+                _chatState.value = ChatState.Generating
+                _messages.value = _messages.value.orEmpty() + ChatMessage("model", "")
+
+                val prompt = "Qualcuno mi ha detto o chiesto: \"$text\". " +
+                        "Suggerisci una frase brevissima che potrei rispondere."
+
+                val accumulated = StringBuilder()
+
+                conv.sendMessageAsync(prompt)
+                    .catch { error ->
+                        val list = _messages.value.orEmpty().toMutableList()
+                        if (list.isNotEmpty() && list.last().text.isBlank()) {
+                            list.removeAt(list.lastIndex)
+                            _messages.value = list
+                        }
+                        _chatState.value = ChatState.Error(
+                            messageRes = R.string.error_generation,
+                            detail = error.localizedMessage
+                        )
+                    }
+                    .collect { chunk ->
+                        accumulated.append(chunk.toString())
+
+                        val updatedList = _messages.value.orEmpty().toMutableList()
+                        val last = updatedList.last()
+                        updatedList[updatedList.lastIndex] = last.copy(
+                            text = accumulated.toString()
+                        )
+                        _messages.value = updatedList
+                    }
+
+                resolvePictogram(accumulated.toString())
+
+                if (_chatState.value is ChatState.Generating) {
+                    _chatState.value = ChatState.Idle
+                }
+            }
+
+        }
+
+    */
+
+    fun sendMessage(text: String) {
+        viewModelScope.launch {
+            lastIncoming = text
+            val ids = findPictogramsFor(text)
+            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text, ids)
+        }
+    }
+
+    //simula una risposta del modello selezionando casualmente una frase dalle opzioni demo
+    private fun sendDemoMessage(text: String) {
         viewModelScope.launch {
             _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
             _chatState.value = ChatState.Generating
-            _messages.value = _messages.value.orEmpty() + ChatMessage("model", "")
+
+            delay(600)
+
+            val pool = pickDemoSuggestions()
+            val reply = pool.filterNot { it == lastDemoReply }.randomOrNull()
+                ?: pool.random()
+            lastDemoReply = reply
+
+            _messages.value= _messages.value.orEmpty() + ChatMessage("model", reply)
+            _chatState.value= ChatState.Idle
+
+            resolvePictogram(reply)
+        }
+    }
+
+    //invia un prompt generico al modello per farsi suggerire quattro nuove frasi contestuali da mostrare all'utente
+    fun requestSuggestions() {
+        if (_chatState.value is ChatState.Generating) return
+        if (_modelState.value is ModelState.DemoMode) {
+            requestDemoSuggestions()
+            return
+        }
+
+        viewModelScope.launch {
+            _chatState.value = ChatState.Generating
+
+            createConversation()
+            val conv = conversation ?: run {
+                _chatState.value = ChatState.Idle
+                return@launch
+            }
+
+            val prompt = lastIncoming?.let {
+                //se qualcuno ha scritto qualcosa il primo suggerisci da frasi inerenti
+                "Qualcuno mi ha detto: \"$it\". Suggerisci 5 frasi che potrei rispondere."
+            } ?: listOf(
+                "Suggerisci 5 frasi.",
+                "Proponi 5 frasi utili adesso.",
+                "Scrivi 5 frasi possibili.",
+                "Genera 5 frasi per questo momento."
+            ).random()
 
             val accumulated = StringBuilder()
 
-            conv.sendMessageAsync(text)
+            conv.sendMessageAsync(prompt)
                 .catch { error ->
                     _chatState.value = ChatState.Error(
-                        error.localizedMessage ?: "Generation error"
+                        messageRes = R.string.error_generation,
+                        detail = error.localizedMessage
                     )
                 }
-                .collect { chunk ->
-                    accumulated.append(chunk.toString())
+                .collect { chunk -> accumulated.append(chunk.toString()) }
 
-                    val updatedList = _messages.value.orEmpty().toMutableList()
-                    updatedList[updatedList.lastIndex] = ChatMessage(
-                        author = "model",
-                        text = accumulated.toString()
-                    )
-                    _messages.value = updatedList
-                }
+            publishSuggestions(splitSuggestions(accumulated.toString()))
+
+            lastIncoming = null
 
             if (_chatState.value is ChatState.Generating) {
                 _chatState.value = ChatState.Idle
             }
+        }
+    }
+
+    //simula la richiesta di suggerimenti pubblicando le opzioni preimpostate della modalità demo
+    private fun requestDemoSuggestions() {
+        viewModelScope.launch {
+            _chatState.value = ChatState.Generating
+            delay(600)
+
+            val suggestions = if (lastIncoming != null) {
+                listOf(
+                    "Sì.", "No.",
+                    "Non lo so.", "Non ho capito."
+                )
+            } else {
+                pickDemoSuggestions()
+            }
+
+            publishSuggestions(suggestions)
+            lastIncoming = null
+            _chatState.value = ChatState.Idle
+        }
+    }
+
+    //pulisce l'output testuale grezzo del modello pulendo le frasi
+    private fun splitSuggestions(raw: String): List<String> =
+        raw.lines()
+            .map { it.trim().removePrefix("-").removePrefix("*").trim() }
+            .map { it.replace(Regex("^\\d+[.)]\\s*"), "") }
+            .map { it.trim('"', '"', '"', '\'', '.') }
+            .filterNot { it.contains("[") || it.contains("/") || it.contains(":") }
+            .filter { it.length in 3..80 }
+            .take(4)
+    private suspend fun publishSuggestions(suggestions: List<String>) {
+        if (suggestions.isEmpty()) return
+
+        val newMessages = suggestions.map { text ->
+            ChatMessage("model", text, findPictogramsFor(text))
+        }
+
+        //se c'è una frase la mantiene
+        _messages.value = if (lastIncoming != null) {
+            _messages.value.orEmpty() + newMessages
+        } else {
+            newMessages
+        }
+    }
+
+    fun clearChatError() {
+        if (_chatState.value is ChatState.Error) {
+            _chatState.value = ChatState.Idle
         }
     }
 

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/suggestFragment">
+
+    <fragment
+        android:id="@+id/suggestFragment"
+        android:name="it.lbsl.aacassistant.SuggestFragment"
+        android:label="@string/title_suggest"
+        tools:layout="@layout/fragment_suggest" />
+
+    <fragment
+        android:id="@+id/favoritesFragment"
+        android:name="it.lbsl.aacassistant.FavoritesFragment"
+        android:label="@string/title_favorites"
+        tools:layout="@layout/fragment_favorites" />
+
+    <fragment
+        android:id="@+id/contextsFragment"
+        android:name="it.lbsl.aacassistant.ContextsFragment"
+        android:label="@string/title_contexts"
+        tools:layout="@layout/fragment_contexts" />
+    <fragment
+        android:id="@+id/creditsFragment"
+        android:name="it.lbsl.aacassistant.CreditsFragment"
+        android:label="@string/title_credits"
+        tools:layout="@layout/fragment_credits" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="it.lbsl.aacassistant.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile" />
+
+</navigation>
