@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "it.lbsl.aacassistant"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -26,6 +26,10 @@ android {
                 enable = false
             }
         }
+    }
+
+    androidResources {
+        noCompress += "gz"
     }
 
     compileOptions {
@@ -55,15 +59,10 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment.ktx)
-    implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.material)
     implementation(libs.litertlm.android)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.material3)
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
     implementation("com.google.firebase:firebase-firestore")

@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.annotation.StringRes
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 sealed interface ModelState {
     object Idle : ModelState
@@ -87,14 +88,19 @@ class LlmViewModel : ViewModel() {
 
     private var lastDemoReply: String? = null
 
+    private var appContext: Context? = null
+
     companion object {
         private const val MODEL_FILENAME = "gemma3-1b-it-int4.litertlm"
     }
 
     //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
     fun getModel(context: Context) {
+        val appCtx = context.applicationContext
+        appContext = appCtx
         viewModelScope.launch {
-            PictogramRepository.loadCoreIndex(context)
+            PictogramRepository.loadCoreIndex(appCtx)
+            PictogramRepository.loadLemmatizer(appCtx)
 
             try {
                 val modelFile = File(context.filesDir, MODEL_FILENAME)
@@ -153,7 +159,8 @@ class LlmViewModel : ViewModel() {
             samplerConfig = SamplerConfig(
                 topK = 40,
                 topP = 0.95,
-                temperature = 0.8
+                temperature = 0.85,
+                seed = Random.nextInt()
             )
         )
         conversation = eng.createConversation(convConfig)
@@ -180,32 +187,40 @@ class LlmViewModel : ViewModel() {
     }
 
     private val stopwords = setOf(
-        "gli", "uno", "una", "con", "per", "tra", "fra",
+        "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
+        "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
         "del", "dello", "della", "dei", "degli", "delle",
-        "all", "allo", "alla", "agli", "alle",
+        "al", "allo", "alla", "ai", "agli", "alle",
         "dal", "dallo", "dalla", "dai", "dagli", "dalle",
         "nel", "nello", "nella", "nei", "negli", "nelle",
         "sul", "sullo", "sulla", "sui", "sugli", "sulle",
-        "che"
+        "e", "ed", "o", "od", "ma", "che", "se",
+        "mi", "ti", "ci", "vi", "si", "ne", "ce", "ve", "me", "te",
+        "qui", "qua", "li", "la"
     )
 
-    //analizza la frase filtrando le stopword per trovare e restituire fino a tre identificatori di pittogrammi univoci corrispondenti
+    //analizza la frase filtrando le stopword per trovare e restituire fino a dieci identificatori di pittogrammi univoci corrispondenti
     private suspend fun findPictogramsFor(sentence: String): List<Int> {
         val words = sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
-            .filter { it.length > 2 && it !in stopwords }
-            .take(6)
+            .filter { it.length >= 2 && it !in stopwords }
+            .take(20)
 
         val ids = mutableListOf<Int>()
+        val ctx = appContext
 
         for (word in words) {
-            val id = PictogramRepository.findPictogram(word)
+            val id = if (ctx != null) {
+                PictogramRepository.findPictogram(ctx, word)
+            } else {
+                PictogramRepository.findPictogram(word)
+            }
 
             if (id != null && id !in ids) { //evita duplicati perche' due parole diverse possono corrispondere allo stesso pittogramma
                 ids.add(id)
             }
-            if (ids.size >= 3) break
+            if (ids.size >= 10) break
         }
 
         return ids
@@ -235,58 +250,6 @@ class LlmViewModel : ViewModel() {
         _messages.value = emptyList()
         _chatState.value = ChatState.Idle
     }
-    /*      POSSIBILE IMPLEMENTAZIONE (da chiedere all'esperto di dominio)
-        //invia il testo dell'utente al modello gestendo la risposta asincrona a blocchi e aggiornando l'interfaccia o delega alla modalità demo se attiva
-         fun sendMessage(text: String) {
-            if (_modelState.value is ModelState.DemoMode) {
-                sendDemoMessage(text)
-                return
-            }
-            val conv = conversation ?: return
-
-            viewModelScope.launch {
-                _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
-                _chatState.value = ChatState.Generating
-                _messages.value = _messages.value.orEmpty() + ChatMessage("model", "")
-
-                val prompt = "Qualcuno mi ha detto o chiesto: \"$text\". " +
-                        "Suggerisci una frase brevissima che potrei rispondere."
-
-                val accumulated = StringBuilder()
-
-                conv.sendMessageAsync(prompt)
-                    .catch { error ->
-                        val list = _messages.value.orEmpty().toMutableList()
-                        if (list.isNotEmpty() && list.last().text.isBlank()) {
-                            list.removeAt(list.lastIndex)
-                            _messages.value = list
-                        }
-                        _chatState.value = ChatState.Error(
-                            messageRes = R.string.error_generation,
-                            detail = error.localizedMessage
-                        )
-                    }
-                    .collect { chunk ->
-                        accumulated.append(chunk.toString())
-
-                        val updatedList = _messages.value.orEmpty().toMutableList()
-                        val last = updatedList.last()
-                        updatedList[updatedList.lastIndex] = last.copy(
-                            text = accumulated.toString()
-                        )
-                        _messages.value = updatedList
-                    }
-
-                resolvePictogram(accumulated.toString())
-
-                if (_chatState.value is ChatState.Generating) {
-                    _chatState.value = ChatState.Idle
-                }
-            }
-
-        }
-
-    */
 
     fun sendMessage(text: String) {
         viewModelScope.launch {

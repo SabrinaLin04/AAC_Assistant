@@ -17,7 +17,8 @@ import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
 class ChatAdapter (
     private val isFavorite: (String) -> Boolean = { false },
-    private val onToggleFavorite: (String, List<Int>) -> Unit = { _, _ -> }
+    private val onToggleFavorite: (String, List<Int>) -> Unit = { _, _ -> },
+    private val onPictogramsClick: (ChatMessage) -> Unit = { }
 ) : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(ChatMessageDiffCallback()) {
 
     class ChatViewHolder(val binding: ItemChatMessageBinding) :
@@ -74,16 +75,33 @@ class ChatAdapter (
             holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.m1_surface))
         }
 
+        val bubbleParams = holder.binding.textBubbleRow.layoutParams as LinearLayout.LayoutParams
+        bubbleParams.gravity = if (isUser) Gravity.END else Gravity.START
+        holder.binding.textBubbleRow.layoutParams = bubbleParams
+
+        val scrollView = holder.binding.pictogramScrollView
         val strip = holder.binding.pictogramStrip
         strip.removeAllViews()
 
+        val scrollParams = scrollView.layoutParams as LinearLayout.LayoutParams
+        scrollParams.gravity = if (isUser) Gravity.END else Gravity.START
+        scrollView.layoutParams = scrollParams
+
+        strip.gravity = if (isUser) (Gravity.END or Gravity.CENTER_VERTICAL) else (Gravity.START or Gravity.CENTER_VERTICAL)
+
         if (message.pictogramIds.isEmpty()) {
-            strip.visibility = View.GONE
+            scrollView.visibility = View.GONE
         } else {
-            strip.visibility = View.VISIBLE
+            scrollView.visibility = View.VISIBLE
 
             val size = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_size)
             val gap = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_gap)
+
+            val onPictogramsClickListener = View.OnClickListener {
+                onPictogramsClick(message)
+            }
+            scrollView.setOnClickListener(onPictogramsClickListener)
+            strip.setOnClickListener(onPictogramsClickListener)
 
             message.pictogramIds.forEachIndexed { index, id ->
                 val image = ImageView(context).apply {
@@ -97,11 +115,22 @@ class ChatAdapter (
                         placeholder(R.drawable.ic_pictogram_placeholder)
                         error(R.drawable.ic_pictogram_placeholder)
                     }
+                    setOnClickListener(onPictogramsClickListener)
                 }
                 strip.addView(image)
             }
 
             strip.contentDescription = message.text
+
+            if (isUser) {
+                scrollView.post {
+                    scrollView.fullScroll(View.FOCUS_RIGHT)
+                }
+            } else {
+                scrollView.post {
+                    scrollView.fullScroll(View.FOCUS_LEFT)
+                }
+            }
         }
 
         val star = holder.binding.favoriteStar

@@ -8,10 +8,16 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.HorizontalScrollView
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import coil.load
 import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -85,6 +91,9 @@ class SuggestFragment: Fragment() {
                 ).setAction(R.string.action_view) {
                     findNavController().navigate(R.id.favoritesFragment)
                 }.show()
+            },
+            onPictogramsClick = { message ->
+                showPictogramDialog(message)
             }
         )
         val layoutManager = LinearLayoutManager(requireContext())
@@ -236,5 +245,45 @@ class SuggestFragment: Fragment() {
         binding.errorMessage.text = message
     }
 
+    //mostra un dialog contenente il testo e i pittogrammi ingranditi del messaggio toccato
+    private fun showPictogramDialog(message: ChatMessage) {
+        if (message.pictogramIds.isEmpty()) return
+
+        val view = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_speak, null)
+
+        view.findViewById<TextView>(R.id.speakText).text = message.text
+
+        val row = view.findViewById<LinearLayout>(R.id.pictogramRow)
+        val scroll = view.findViewById<HorizontalScrollView>(R.id.pictogramScroll)
+
+        row.removeAllViews()
+
+        if (message.pictogramIds.isEmpty()) {
+            scroll.visibility = View.GONE
+        } else {
+            scroll.visibility = View.VISIBLE
+            val size = resources.getDimensionPixelSize(R.dimen.pictogram_max_size)
+            val gap = resources.getDimensionPixelSize(R.dimen.pictogram_gap)
+
+            message.pictogramIds.forEach { id ->
+                val image = ImageView(requireContext()).apply {
+                    layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                        marginStart = gap
+                        marginEnd = gap
+                    }
+                    load(PictogramRepository.imageSource(requireContext(), id))
+                }
+                row.addView(image)
+            }
+
+            row.contentDescription = message.text
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setView(view)
+            .setPositiveButton(R.string.action_close, null)
+            .show()
+    }
 
 }
