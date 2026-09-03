@@ -5,7 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -56,8 +58,10 @@ class ProfileViewModel : ViewModel() {
                 }
                 user.updateProfile(profileUpdates).await()
 
+                var emailVerificationSent = false
                 if (email != user.email && email.isNotBlank()) {
-                    user.updateEmail(email).await()
+                    user.verifyBeforeUpdateEmail(email).await()
+                    emailVerificationSent = true
                 }
 
                 if (!newPassword.isNullOrBlank()) {
@@ -65,15 +69,30 @@ class ProfileViewModel : ViewModel() {
                 }
 
                 val updates = mutableMapOf<String, Any?>(
-                    "displayName" to displayName,
-                    "email" to email
+                    "displayName" to displayName
                 )
+                // Se l'email è stata inviata per verifica, non aggiorniamo ancora Firestore
+                // o lo aggiorniamo solo se vogliamo che rifletta l'email "corrente" (quella vecchia)
+                // In questo caso, l'email in Firestore dovrebbe cambiare solo dopo la verifica.
+                // Tuttavia, il repository.updateProfile(updates) sovrascriverà l'email se la passiamo.
+                if (!emailVerificationSent) {
+                    updates["email"] = email
+                }
+
                 repository.updateProfile(updates)
 
                 _userProfile.value = repository.getProfile()
-                _statusMessage.value = R.string.profile_updated_success
+                _statusMessage.value = if (emailVerificationSent) {
+                    R.string.profile_email_verification_sent
+                } else {
+                    R.string.profile_updated_success
+                }
             } catch (e: FirebaseAuthRecentLoginRequiredException) {
                 _statusMessage.value = R.string.error_recent_login_required
+            } catch (e: FirebaseAuthInvalidCredentialsException) {
+                _statusMessage.value = R.string.error_invalid_email
+            } catch (e: FirebaseAuthUserCollisionException) {
+                _statusMessage.value = R.string.error_email_already_in_use
             } catch (e: Exception) {
                 val message = e.message ?: ""
                 if (message.contains("RECENT_LOGIN_REQUIRED") || message.contains("CREDENTIAL_TOO_OLD")) {

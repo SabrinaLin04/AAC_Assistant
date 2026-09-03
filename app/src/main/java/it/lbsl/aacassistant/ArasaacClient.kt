@@ -1,6 +1,5 @@
 package it.lbsl.aacassistant
 
-import com.google.firebase.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -15,7 +14,7 @@ object ArasaacClient {
         .addInterceptor(
             HttpLoggingInterceptor().apply {
                 level = if (BuildConfig.DEBUG) {
-                    HttpLoggingInterceptor.Level.BASIC
+                    HttpLoggingInterceptor.Level.BODY
                 } else {
                     HttpLoggingInterceptor.Level.NONE
                 }

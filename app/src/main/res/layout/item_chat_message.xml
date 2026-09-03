@@ -32,50 +32,64 @@
 
             <LinearLayout
                 android:id="@+id/bubbleColumn"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:layout_constrainedWidth="true"
-                app:layout_constraintWidth_max="wrap"
-                app:layout_constraintHorizontal_bias="0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/favoriteStar"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
+                <HorizontalScrollView
+                    android:id="@+id/pictogramScrollView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fillViewport="true"
+                    android:scrollbars="horizontal"
+                    android:fadeScrollbars="false"
+                    android:scrollbarSize="4dp"
+                    android:layout_marginBottom="6dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:id="@+id/pictogramStrip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical" />
+
+                </HorizontalScrollView>
+
                 <LinearLayout
-                    android:id="@+id/pictogramStrip"
+                    android:id="@+id/textBubbleRow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp"
-                    android:visibility="gone" />
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/messageText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="10dp"
-                    android:lineSpacingExtra="2dp"
-                    android:textAppearance="@style/TextAppearance.App.Message"
-                    android:text="@{message.text}" />
+                    <TextView
+                        android:id="@+id/messageText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="10dp"
+                        android:lineSpacingExtra="2dp"
+                        android:textAppearance="@style/TextAppearance.App.Message"
+                        android:text="@{message.text}" />
+
+                    <ImageButton
+                        android:id="@+id/favoriteStar"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="12dp"
+                        android:src="@android:drawable/btn_star_big_off"
+                        android:contentDescription="@string/action_toggle_favorite"
+                        android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}' />
+
+                </LinearLayout>
 
             </LinearLayout>
-
-            <ImageButton
-                android:id="@+id/favoriteStar"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="12dp"
-                android:src="@android:drawable/btn_star_big_off"
-                android:contentDescription="@string/action_toggle_favorite"
-                android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}'
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/bubbleColumn"
-                app:layout_constraintBottom_toBottomOf="@id/bubbleColumn" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
