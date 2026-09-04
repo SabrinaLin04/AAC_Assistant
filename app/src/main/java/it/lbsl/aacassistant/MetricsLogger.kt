@@ -7,8 +7,9 @@ data class MetricsEntry(
     val timestamp: String,
     val ttftMs: Long,
     val totalMs: Long,
-    val nTokens: Int,
-    val tokPerSec: Double,
+    val nChars: Int,
+    val nChunks: Int,
+    val charPerSec: Double,
     val backend: String,
     val model: String,
     val contextId: String
@@ -18,8 +19,9 @@ data class MetricsEntry(
             put("timestamp", timestamp)
             put("ttft_ms", ttftMs)
             put("total_ms", totalMs)
-            put("n_tokens", nTokens)
-            put("tok_s", tokPerSec)
+            put("n_chars", nChars)
+            put("n_chunks", nChunks)
+            put("char_s", charPerSec)
             put("backend", backend)
             put("model", model)
             put("context_id", contextId)
