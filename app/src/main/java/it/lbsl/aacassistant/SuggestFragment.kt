@@ -187,7 +187,7 @@ class SuggestFragment: Fragment() {
         }
 
         contextsViewModel.activeContext.observe(viewLifecycleOwner) { ctx ->
-            viewModel.setContext(ctx?.description)
+            viewModel.setContext(ctx?.name, ctx?.description)
             binding.contextLabel.text = ctx?.name ?: getString(R.string.context_none)
         }
 

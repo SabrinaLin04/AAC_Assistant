@@ -84,9 +84,12 @@ class LlmViewModel : ViewModel() {
 
     private var contextDescription: String? = null
 
+    private var contextName: String? = null
+
     private var lastIncoming: String? = null
 
-    private var lastDemoReply: String? = null
+
+    private var metricsLogger: MetricsLogger? = null
 
     private var appContext: Context? = null
 
@@ -96,6 +99,7 @@ class LlmViewModel : ViewModel() {
 
     //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
     fun getModel(context: Context) {
+        metricsLogger = MetricsLogger(context.filesDir)
         val appCtx = context.applicationContext
         appContext = appCtx
         viewModelScope.launch {
@@ -238,9 +242,10 @@ class LlmViewModel : ViewModel() {
     }
 
     //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
-    fun setContext(description: String?) {
+    fun setContext(name: String?, description: String?) {
         if (description == contextDescription) return
 
+        contextName = name
         contextDescription = description
         lastIncoming = null
 
@@ -256,26 +261,6 @@ class LlmViewModel : ViewModel() {
             lastIncoming = text
             val ids = findPictogramsFor(text)
             _messages.value = _messages.value.orEmpty() + ChatMessage("user", text, ids)
-        }
-    }
-
-    //simula una risposta del modello selezionando casualmente una frase dalle opzioni demo
-    private fun sendDemoMessage(text: String) {
-        viewModelScope.launch {
-            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text)
-            _chatState.value = ChatState.Generating
-
-            delay(600)
-
-            val pool = pickDemoSuggestions()
-            val reply = pool.filterNot { it == lastDemoReply }.randomOrNull()
-                ?: pool.random()
-            lastDemoReply = reply
-
-            _messages.value= _messages.value.orEmpty() + ChatMessage("model", reply)
-            _chatState.value= ChatState.Idle
-
-            resolvePictogram(reply)
         }
     }
 
@@ -308,6 +293,10 @@ class LlmViewModel : ViewModel() {
 
             val accumulated = StringBuilder()
 
+            val startTime = System.currentTimeMillis()
+            var firstTokenTime: Long? = null
+            var tokenCount = 0
+
             conv.sendMessageAsync(prompt)
                 .catch { error ->
                     _chatState.value = ChatState.Error(
@@ -315,7 +304,29 @@ class LlmViewModel : ViewModel() {
                         detail = error.localizedMessage
                     )
                 }
-                .collect { chunk -> accumulated.append(chunk.toString()) }
+                .collect { chunk ->
+                    if (firstTokenTime == null) {
+                        firstTokenTime = System.currentTimeMillis()
+                    }
+                    tokenCount++
+                    accumulated.append(chunk.toString()) }
+
+            val endTime = System.currentTimeMillis()
+            val totalMs = endTime - startTime
+            val ttftMs = (firstTokenTime ?: endTime) - startTime
+
+            withContext(Dispatchers.IO) {metricsLogger?.log(MetricsEntry(
+                timestamp = java.time.Instant.now().toString(),
+                ttftMs = ttftMs,
+                totalMs = totalMs,
+                nTokens = tokenCount,
+                tokPerSec = if (totalMs > 0) tokenCount * 1000.0 / totalMs else 0.0,
+                backend = "GPU",
+                model = "gemma3-1b-it-int4",
+                contextId = contextName  ?: "none"
+            ))
+            }
+
 
             publishSuggestions(splitSuggestions(accumulated.toString()))
 
