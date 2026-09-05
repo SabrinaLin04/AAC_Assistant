@@ -75,9 +75,9 @@ class ChatAdapter (
             holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.m1_surface))
         }
 
-        val bubbleParams = holder.binding.textBubbleRow.layoutParams as LinearLayout.LayoutParams
-        bubbleParams.gravity = if (isUser) Gravity.END else Gravity.START
-        holder.binding.textBubbleRow.layoutParams = bubbleParams
+        val textParams = holder.binding.messageText.layoutParams as ConstraintLayout.LayoutParams
+        textParams.horizontalBias = if (isUser) 1f else 0f
+        holder.binding.messageText.layoutParams = textParams
 
         val scrollView = holder.binding.pictogramScrollView
         val strip = holder.binding.pictogramStrip
