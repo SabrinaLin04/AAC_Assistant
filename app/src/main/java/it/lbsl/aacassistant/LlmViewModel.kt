@@ -137,7 +137,7 @@ class LlmViewModel : ViewModel() {
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
                 "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
-                "Ogni frase: 3-4 parole, italiano semplice, una per riga. " +
+                "Ogni frase: 3-10 parole, italiano semplice, una per riga. " +
                 "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
         return contextDescription
@@ -325,7 +325,11 @@ class LlmViewModel : ViewModel() {
                 nChars = accumulated.length,
                 nChunks = tokenCount,
                 charPerSec = if (totalMs > 0) tokenCount * 1000.0 / totalMs else 0.0,
-                backend = engineProvider?.selected?.backend?.toString() ?: "unknown",
+                backend = when (engineProvider?.selected?.backend) {
+                    is Backend.GPU -> "GPU"
+                    is Backend.CPU -> "CPU"
+                    else -> "unknown"
+                },
                 model = engineProvider?.selected?.label ?: "none",
                 contextId = contextName  ?: "none"
             ))
