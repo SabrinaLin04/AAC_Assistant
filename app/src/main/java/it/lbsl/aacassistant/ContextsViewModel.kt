@@ -97,8 +97,9 @@ class ContextsViewModel : ViewModel() {
     fun selectContext(contextId: String) {
         viewModelScope.launch {
             try {
-                repository.setActiveContext(contextId)
-                _activeContextId.value = contextId
+                val newActiveId = if (_activeContextId.value == contextId) null else contextId
+                repository.setActiveContext(newActiveId)
+                _activeContextId.value = newActiveId
             } catch (e: Exception) {
                 _errorMessage.value = R.string.error_select_context
             }

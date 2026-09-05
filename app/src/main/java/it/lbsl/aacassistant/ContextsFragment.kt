@@ -45,12 +45,14 @@ class ContextsFragment : Fragment() {
     private fun setupRecyclerView() {
         adapter = ContextsAdapter(
             onSelect = { userContext ->
+                val isCurrentlyActive = viewModel.activeContextId.value == userContext.id
                 viewModel.selectContext(userContext.id)
-                Snackbar.make(
-                    binding.root,
-                    getString(R.string.context_selected, userContext.name),
-                    Snackbar.LENGTH_SHORT
-                ).show()
+                val message = if (isCurrentlyActive) {
+                    getString(R.string.context_deactivated)
+                } else {
+                    getString(R.string.context_selected, userContext.name)
+                }
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
             },
             onEdit = { userContext -> showContextDialog(userContext)}
         )
