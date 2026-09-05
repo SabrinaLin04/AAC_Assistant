@@ -89,8 +89,19 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
+
+        // binding.drawerMenuView.setupWithNavController(navController)
+
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
-        binding.drawerMenuView.setupWithNavController(navController)
+        binding.drawerMenuView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.switchModel -> showModelSwitchDialog()
+                else -> androidx.navigation.ui.NavigationUI
+                    .onNavDestinationSelected(item, navController)
+            }
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
 
         //listener per ogni cambio di destinazione, abilita la chiusura automatica del drawer
         //una volta selezionata una nuova destinazione
@@ -102,6 +113,35 @@ class MainActivity : AppCompatActivity() {
 
         setupLogoutRow()
         setupProfileRow()
+    }
+
+    private fun showModelSwitchDialog() {
+        val llmViewModel = androidx.lifecycle.ViewModelProvider(this)[LlmViewModel::class.java]
+        val models = llmViewModel.getAvailableModels()
+
+        if (models.size < 2) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Cambia modello")
+                .setMessage("Solo un modello disponibile: ${models.firstOrNull()?.label ?: "nessuno"}")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val current = llmViewModel.getCurrentModel()
+        val names = models.map {
+            if (it == current) "${it.label} ✓" else it.label
+        }.toTypedArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Seleziona modello")
+            .setItems(names) { _, which ->
+                val chosen = models[which]
+                if (chosen != current) {
+                    llmViewModel.switchModel(chosen)
+                }
+            }
+            .show()
     }
     private fun setupProfileRow() {
         binding.profileRow.setOnClickListener {
