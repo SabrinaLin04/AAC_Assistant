@@ -13,8 +13,10 @@ data class ModelInfo(
 class LlmEngineProvider(private val filesDir: File) {
 
     private val knownModels = listOf(
-        ModelInfo("gemma3-1b-it-int4.litertlm", "Gemma 3 1B INT4"),
-        ModelInfo("gemma-4-E2B-it.litertlm", "Gemma 4 E2B")
+        ModelInfo("gemma3-1b-it-int4.litertlm", "Gemma 3 1B INT4 GPU", Backend.GPU()),
+        ModelInfo("gemma3-1b-it-int4.litertlm", "Gemma 3 1B INT4 CPU", Backend.CPU()),
+        ModelInfo("gemma-4-E2B-it.litertlm", "Gemma 4 E2B GPU", Backend.GPU()),
+        ModelInfo("gemma-4-E2B-it.litertlm", "Gemma 4 E2B CPU", Backend.CPU()),
     )
 
     fun availableModels(): List<ModelInfo> =
