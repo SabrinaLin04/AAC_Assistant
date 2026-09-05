@@ -97,7 +97,7 @@ class SuggestFragment: Fragment() {
             }
         )
         val layoutManager = LinearLayoutManager(requireContext())
-        layoutManager.stackFromEnd = true
+        layoutManager.stackFromEnd = false
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = chatAdapter
         binding.recyclerView.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
@@ -192,9 +192,18 @@ class SuggestFragment: Fragment() {
         }
 
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
+            val oldSize = chatAdapter.itemCount
             chatAdapter.updateMessages(messages) {
                 if (messages.isNotEmpty()) {
-                    binding.recyclerView.scrollToPosition(messages.lastIndex)
+                    val targetIndex = if (messages.size > oldSize) {
+                        oldSize
+                    } else if (messages.first().author == "user" && messages.size > 1) {
+                        1
+                    } else {
+                        0
+                    }
+                    val lm = binding.recyclerView.layoutManager as? LinearLayoutManager
+                    lm?.scrollToPositionWithOffset(targetIndex, 0)
                 }
             }
         }
