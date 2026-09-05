@@ -93,37 +93,40 @@ class LlmViewModel : ViewModel() {
 
     private var appContext: Context? = null
 
-    companion object {
-        private const val MODEL_FILENAME = "gemma3-1b-it-int4.litertlm"
-    }
+    private var engineProvider: LlmEngineProvider? = null
 
     //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
     fun getModel(context: Context) {
         metricsLogger = MetricsLogger(context.filesDir)
+        engineProvider= LlmEngineProvider(context.filesDir)
         val appCtx = context.applicationContext
         appContext = appCtx
         viewModelScope.launch {
             PictogramRepository.loadCoreIndex(appCtx)
             PictogramRepository.loadLemmatizer(appCtx)
 
-            try {
-                val modelFile = File(context.filesDir, MODEL_FILENAME)
+            val provider = engineProvider!!
+            val available = provider.discoverModels()
 
-                if (!modelFile.exists()) {
-                    val source = File("/data/local/tmp/$MODEL_FILENAME")
-                    if (source.exists()) {
-                        _modelState.value = ModelState.Initializing(R.string.model_copying)
-                        withContext(Dispatchers.IO) {
-                            source.copyTo(modelFile)
-                        }
-                    } else {
-                        _modelState.value = ModelState.DemoMode
-                        return@launch
-                    }
+            if (available.isEmpty()) {
+                _modelState.value = ModelState.DemoMode
+                return@launch
+            }
+
+            val model=available.first()
+
+            try {
+                _modelState.value = ModelState.Initializing(R.string.model_copying)
+                val modelPath = withContext(Dispatchers.IO) {
+                    provider.prepareModel(model)
                 }
 
-                loadEngine(modelFile.absolutePath, context)
+                if (modelPath == null) {
+                    _modelState.value = ModelState.DemoMode
+                    return@launch
+                }
 
+                loadEngine(modelPath, context, model)
             } catch (e: Exception) {
                 _modelState.value = ModelState.DemoMode
             }
@@ -134,7 +137,7 @@ class LlmViewModel : ViewModel() {
     private fun buildSystemPrompt(): String {
         val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
                 "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
-                "Ogni frase: 3-4 parole, italiano semplice, una per riga. " +
+                "Ogni frase: 3-10 parole, italiano semplice, una per riga. " +
                 "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
         return contextDescription
@@ -171,13 +174,13 @@ class LlmViewModel : ViewModel() {
     }
 
     //carica e inizializza il motore litert in un thread secondario specificando il percorso del modello e l'uso della gpu
-    private suspend fun loadEngine(modelPath: String, context: Context) {
+    private suspend fun loadEngine(modelPath: String, context: Context, model: ModelInfo) {
         _modelState.value = ModelState.Initializing(R.string.model_initializing)
 
         val loadedEngine = withContext(Dispatchers.IO) {
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
-                backend = Backend.GPU(),
+                backend = model.backend,
                 cacheDir = context.cacheDir.absolutePath
             )
             val eng = Engine(engineConfig)
@@ -293,7 +296,7 @@ class LlmViewModel : ViewModel() {
 
             val accumulated = StringBuilder()
 
-            val startTime = System.currentTimeMillis()
+            val startTime = System.nanoTime()
             var firstTokenTime: Long? = null
             var tokenCount = 0
 
@@ -306,23 +309,28 @@ class LlmViewModel : ViewModel() {
                 }
                 .collect { chunk ->
                     if (firstTokenTime == null) {
-                        firstTokenTime = System.currentTimeMillis()
+                        firstTokenTime = System.nanoTime()
                     }
                     tokenCount++
                     accumulated.append(chunk.toString()) }
 
-            val endTime = System.currentTimeMillis()
-            val totalMs = endTime - startTime
-            val ttftMs = (firstTokenTime ?: endTime) - startTime
+            val endTime = System.nanoTime()
+            val totalMs = (endTime - startTime) / 1_000_000
+            val ttftMs = ((firstTokenTime ?: endTime) - startTime) / 1_000_000
 
             withContext(Dispatchers.IO) {metricsLogger?.log(MetricsEntry(
                 timestamp = java.time.Instant.now().toString(),
                 ttftMs = ttftMs,
                 totalMs = totalMs,
-                nTokens = tokenCount,
-                tokPerSec = if (totalMs > 0) tokenCount * 1000.0 / totalMs else 0.0,
-                backend = "GPU",
-                model = "gemma3-1b-it-int4",
+                nChars = accumulated.length,
+                nChunks = tokenCount,
+                charPerSec = if (totalMs > 0) tokenCount * 1000.0 / totalMs else 0.0,
+                backend = when (engineProvider?.selected?.backend) {
+                    is Backend.GPU -> "GPU"
+                    is Backend.CPU -> "CPU"
+                    else -> "unknown"
+                },
+                model = engineProvider?.selected?.label ?: "none",
                 contextId = contextName  ?: "none"
             ))
             }
@@ -382,6 +390,49 @@ class LlmViewModel : ViewModel() {
             newMessages
         }
     }
+
+    fun switchModel(model: ModelInfo) {
+        val provider = engineProvider ?: return
+        val ctx = appContext ?: return
+
+        viewModelScope.launch {
+            _modelState.value = ModelState.Initializing(R.string.model_initializing)
+            _messages.value = emptyList()
+            _chatState.value = ChatState.Idle
+
+            withContext(Dispatchers.IO) {
+                conversation?.close()
+                conversation = null
+                engine?.close()
+                engine = null
+            }
+
+            val path = withContext(Dispatchers.IO) {
+                provider.prepareModel(model)
+            }
+
+            if (path == null) {
+                _modelState.value = ModelState.DemoMode
+                return@launch
+            }
+
+            try {
+                loadEngine(path, ctx, model)
+            } catch (e: Exception) {
+                _modelState.value = ModelState.Error(
+                    messageRes = R.string.error_generation,
+                    detail = e.localizedMessage
+                )
+            }
+        }
+    }
+
+    // esponi la lista dei modelli disponibili per la UI
+    fun getAvailableModels(): List<ModelInfo> =
+        engineProvider?.discoverModels() ?: emptyList()
+
+    fun getCurrentModel(): ModelInfo? =
+        engineProvider?.selected
 
     fun clearChatError() {
         if (_chatState.value is ChatState.Error) {
