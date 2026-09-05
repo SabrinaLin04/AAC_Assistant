@@ -59,12 +59,10 @@
 
                 </HorizontalScrollView>
 
-                <LinearLayout
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/textBubbleRow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
                     <TextView
                         android:id="@+id/messageText"
@@ -74,7 +72,14 @@
                         android:paddingVertical="10dp"
                         android:lineSpacingExtra="2dp"
                         android:textAppearance="@style/TextAppearance.App.Message"
-                        android:text="@{message.text}" />
+                        android:text="@{message.text}"
+                        app:layout_constrainedWidth="true"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/favoriteStar"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintHorizontal_chainStyle="packed"
+                        app:layout_constraintHorizontal_bias="0.0" />
 
                     <ImageButton
                         android:id="@+id/favoriteStar"
@@ -85,9 +90,14 @@
                         android:padding="12dp"
                         android:src="@android:drawable/btn_star_big_off"
                         android:contentDescription="@string/action_toggle_favorite"
-                        android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}' />
+                        android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}'
+                        app:layout_constraintStart_toEndOf="@id/messageText"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="@id/messageText"
+                        app:layout_constraintBottom_toBottomOf="@id/messageText"
+                        app:layout_constraintHorizontal_bias="0.0" />
 
-                </LinearLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
             </LinearLayout>
 
