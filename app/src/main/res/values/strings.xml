@@ -107,6 +107,7 @@
 
     <string name="context_active">ATTIVO</string>
     <string name="context_selected">Contesto attivo: %1$s</string>
+    <string name="context_deactivated">Contesto disattivato</string>
     <string name="context_none">Nessun contesto</string>
 
     <string name="action_suggest">Suggerisci frasi</string>
