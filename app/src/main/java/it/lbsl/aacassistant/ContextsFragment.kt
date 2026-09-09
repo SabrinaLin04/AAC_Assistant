@@ -92,18 +92,30 @@ class ContextsFragment : Fragment() {
             ) = false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val contextItem = adapter.itemAt(viewHolder.bindingAdapterPosition)
+                val position = viewHolder.bindingAdapterPosition
+                val contextItem = adapter.itemAt(position)
 
-                val deletedName = contextItem.name
-                val deletedDesc = contextItem.description
+                requireContext().showConfirmationDialog(
+                    title = getString(R.string.delete_context_confirm_title),
+                    message = getString(R.string.delete_context_confirm_message, contextItem.name),
+                    positiveButtonText = getString(R.string.action_delete),
+                    negativeButtonText = getString(R.string.action_cancel),
+                    onConfirm = {
+                        val deletedName = contextItem.name
+                        val deletedDesc = contextItem.description
 
-                viewModel.deleteContext(contextItem.id)
+                        viewModel.deleteContext(contextItem.id)
 
-                Snackbar.make(binding.root, R.string.context_deleted, Snackbar.LENGTH_LONG)
-                    .setAction(R.string.action_undo) {
-                        viewModel.addContext(deletedName, deletedDesc)
+                        Snackbar.make(binding.root, R.string.context_deleted, Snackbar.LENGTH_LONG)
+                            .setAction(R.string.action_undo) {
+                                viewModel.addContext(deletedName, deletedDesc)
+                            }
+                            .show()
+                    },
+                    onCancel = {
+                        adapter.notifyItemChanged(position)
                     }
-                    .show()
+                )
             }
         }
         ItemTouchHelper(callback).attachToRecyclerView(binding.contextsRecycler)

@@ -47,9 +47,15 @@
     <string name="context_deleted">Contesto eliminato</string>
 
     <string name="action_save">Salva</string>
+    <string name="action_delete">Elimina</string>
     <string name="action_cancel">Annulla</string>
     <string name="action_undo">Annulla</string>
     <string name="action_view">Vedi</string>
+
+    <string name="delete_context_confirm_title">Eliminare contesto?</string>
+    <string name="delete_context_confirm_message">Sei sicuro di voler eliminare il contesto "%1$s"?</string>
+    <string name="delete_favorite_confirm_title">Eliminare preferito?</string>
+    <string name="delete_favorite_confirm_message">Sei sicuro di voler eliminare la frase "%1$s"?</string>
 
     <string name="sign_in_cancelled">Accesso annullato</string>
     <string name="no_network">Nessuna connessione internet</string>

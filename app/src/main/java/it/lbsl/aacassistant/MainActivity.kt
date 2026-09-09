@@ -161,54 +161,13 @@ class MainActivity : AppCompatActivity() {
 
     //crea e mostra un dialog di conferma per l'uscita dall'account
     private fun confirmLogout() {
-        val dialog = MaterialAlertDialogBuilder(
-            this,
-            R.style.ThemeOverlay_AACAssistant_Dialog
+        showConfirmationDialog(
+            title = getString(R.string.logout_confirm_title),
+            message = getString(R.string.logout_confirm_message),
+            positiveButtonText = getString(R.string.action_logout),
+            negativeButtonText = getString(R.string.action_cancel),
+            onConfirm = { logout() }
         )
-            .setTitle(R.string.logout_confirm_title)
-            .setMessage(R.string.logout_confirm_message)
-            .setPositiveButton(R.string.action_logout) { _, _ -> logout() }
-            .setNegativeButton(R.string.action_cancel, null)
-            .create()
-
-        dialog.setOnShowListener {
-            val exitButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE) as? com.google.android.material.button.MaterialButton
-            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE) as? com.google.android.material.button.MaterialButton
-
-            exitButton?.apply {
-                backgroundTintList = ContextCompat.getColorStateList(context, R.color.m_primary)
-                setTextColor(ContextCompat.getColor(context, R.color.m1_primary))
-                cornerRadius = dpToPx(22)
-                insetTop = 0
-                insetBottom = 0
-            }
-
-            cancelButton?.apply {
-                backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.transparent)
-                setTextColor(ContextCompat.getColor(context, R.color.m_primary))
-                strokeColor = ContextCompat.getColorStateList(context, R.color.m_primary)
-                strokeWidth = dpToPx(1)
-                cornerRadius = dpToPx(22)
-                insetTop = 0
-                insetBottom = 0
-            }
-
-            listOfNotNull(exitButton, cancelButton).forEach { button ->
-                button.isAllCaps = false
-                button.minHeight = dpToPx(44)
-                button.setPadding(dpToPx(20), 0, dpToPx(20), 0)
-
-                (button.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
-                    params.width = 0
-                    params.weight = 1f
-                    params.marginStart = dpToPx(6)
-                    params.marginEnd = dpToPx(6)
-                    button.layoutParams = params
-                }
-            }
-        }
-
-        dialog.show()
     }
 
     private fun dpToPx(dp: Int): Int =
