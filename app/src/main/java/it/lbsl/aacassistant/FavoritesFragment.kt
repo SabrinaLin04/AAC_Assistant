@@ -114,11 +114,26 @@ class FavoritesFragment: Fragment() {
             )= false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val favorite = adapter.itemAt(viewHolder.bindingAdapterPosition)
-                viewModel.deleteFavorite(favorite.id)
+                val position = viewHolder.bindingAdapterPosition
+                val favorite = adapter.itemAt(position)
 
-                Snackbar.make(binding.root, R.string.favorite_deleted, Snackbar.LENGTH_LONG).setAction(R.string.action_undo)
-                {viewModel.toggleFavorite(favorite.text, favorite.pictogramIds)}.show()
+                requireContext().showConfirmationDialog(
+                    title = getString(R.string.delete_favorite_confirm_title),
+                    message = getString(R.string.delete_favorite_confirm_message, favorite.text),
+                    positiveButtonText = getString(R.string.action_delete),
+                    negativeButtonText = getString(R.string.action_cancel),
+                    onConfirm = {
+                        viewModel.deleteFavorite(favorite.id)
+                        Snackbar.make(binding.root, R.string.favorite_deleted, Snackbar.LENGTH_LONG)
+                            .setAction(R.string.action_undo) {
+                                viewModel.toggleFavorite(favorite.text, favorite.pictogramIds)
+                            }
+                            .show()
+                    },
+                    onCancel = {
+                        adapter.notifyItemChanged(position)
+                    }
+                )
             }
         }
         ItemTouchHelper(callback).attachToRecyclerView(binding.favoritesRecycler)
