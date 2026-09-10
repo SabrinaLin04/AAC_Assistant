@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentContextsBinding
 
@@ -136,7 +137,7 @@ class ContextsFragment : Fragment() {
 
         val titleRes = if (isEditing) R.string.edit_context_title else R.string.add_context_title
 
-        AlertDialog.Builder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_AACAssistant_Dialog)
             .setTitle(titleRes)
             .setView(dialogView)
             .setPositiveButton(R.string.action_save) { _, _ ->
@@ -152,7 +153,13 @@ class ContextsFragment : Fragment() {
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.styleCustomButtons()
+        }
+
+        dialog.show()
     }
 
     override fun onDestroyView() {

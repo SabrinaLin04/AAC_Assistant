@@ -24,6 +24,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
 
 class SuggestFragment: Fragment() {
@@ -156,7 +157,7 @@ class SuggestFragment: Fragment() {
     }
 
     private fun updateSendButtonTint(enabled: Boolean) {
-        val color = if (enabled) Color.WHITE else ContextCompat.getColor(requireContext(), R.color.m_outline)
+        val color = if (enabled) Color.WHITE else ContextCompat.getColor(requireContext(), R.color.aac_outline)
         binding.sendButton.setColorFilter(color, PorterDuff.Mode.SRC_IN)
     }
 
@@ -212,13 +213,14 @@ class SuggestFragment: Fragment() {
             val isGenerating = state is ChatState.Generating
             binding.messageInput.isEnabled = !isGenerating
             binding.suggestButton.isEnabled = !isGenerating
+            binding.suggestProgressBar.visibility = if (isGenerating) View.VISIBLE else View.GONE
             val enabled = !isGenerating && !binding.messageInput.text.isNullOrBlank()
             binding.sendButton.isEnabled = enabled
             updateSendButtonTint(enabled)
 
             if (isGenerating) {
                 binding.statusIndicator.text = getString(R.string.chat_status_generating)
-                binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_generating))
+                binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_busy))
             } else {
                 binding.statusIndicator.text = getString(R.string.chat_status_available)
                 binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_available))
@@ -289,10 +291,16 @@ class SuggestFragment: Fragment() {
             row.contentDescription = message.text
         }
 
-        AlertDialog.Builder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_AACAssistant_Dialog)
             .setView(view)
             .setPositiveButton(R.string.action_close, null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.styleCustomButtons()
+        }
+
+        dialog.show()
     }
 
 }

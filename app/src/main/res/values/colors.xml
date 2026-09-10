@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    //m = ruoli materiali
-    <color name="m_primary">#6750A4</color>
-    <color name="m1_primary">#FFFFFF</color>
-    <color name="m_primary_container">#EADDFF</color>
-    <color name="m1_primary_container">#21005D</color>
-
-    <color name="m_secondary">#625B71</color>
-    <color name="m1_secondary">#FFFFFF</color>
-
-    <color name="m_surface">#FFFBFE</color>
-    <color name="m1_surface">#1C1B1F</color>
-    <color name="m_surface_variant">#E7E0EC</color>
-    <color name="m1_surface_variant">#49454F</color>
-
-    <color name="m_background">#F5F3F7</color>
-    <color name="m_outline">#79747E</color>
-
-    <color name="m_error">#B3261E</color>
-    <color name="m1_error">#FFFFFF</color>
-
-    <color name="status_available">#2E7D32</color>
-    <color name="status_generating">#E65100</color>
-    <color name="bubble_user">#6750A4</color>
-    <color name="bubble_assistant">#FFFFFF</color>
+    <color name="aac_surface">#F7F7F8</color>
+    <color name="aac_surface_variant">#EDEDEF</color>
+    <color name="aac_surface_container">#FFFFFF</color>
+    <color name="aac_outline">#C9C9CE</color>
+    <color name="aac_outline_variant">#DEDEE2</color>
+    <color name="aac_on_surface">#2B2B2B</color>
+    <color name="aac_on_surface_variant">#5A5A5E</color>
+    <color name="aac_primary">#426F8F</color>
+    <color name="aac_on_primary">#FFFFFF</color>
+    <color name="aac_primary_container">#DCE8F1</color>
+    <color name="aac_on_primary_container">#1E3A4C</color>
+    <color name="aac_primary_accent">#4A7C9F</color>
+    <color name="aac_success">#3A735C</color>
+    <color name="aac_on_success">#FFFFFF</color>
+    <color name="aac_success_container">#DFEDE7</color>
+    <color name="aac_error">#B84A4A</color>
+    <color name="aac_on_error">#FFFFFF</color>
+    <color name="aac_error_container">#F5E2E2</color>
+    <color name="aac_on_error_container">#5C2020</color>
+    <color name="aac_warning_container">#F5EDD8</color>
+    <color name="aac_on_warning_container">#5C4A16</color>
+    <color name="aac_bubble_assistant">#FFFFFF</color>
+    <color name="aac_bubble_user">#DCE8F1</color>
+    <color name="aac_pictogram_background">#FFFFFF</color>
+    <color name="status_available">#3A735C</color>
+    <color name="status_busy">#8A6D1F</color>
+    <color name="status_error">#B84A4A</color>
 </resources>

@@ -43,15 +43,15 @@ class ChatAdapter (
         holder.binding.authorLabel.gravity = if (isUser) Gravity.END else Gravity.START
 
         val params = holder.binding.bubbleColumn.layoutParams
-                as ConstraintLayout.LayoutParams
-        params.horizontalBias = if (isUser) 1f else 0f
+                as LinearLayout.LayoutParams
+        params.gravity = if (isUser) Gravity.END else Gravity.START
         holder.binding.bubbleColumn.layoutParams = params
 
         val context = holder.itemView.context
 
         if (isUser) {
             val drawable = GradientDrawable().apply {
-                setColor(ContextCompat.getColor(context, R.color.bubble_user))
+                setColor(ContextCompat.getColor(context, R.color.aac_bubble_user))
                 cornerRadii = floatArrayOf(
                     36f, 36f,
                     36f, 36f,
@@ -60,10 +60,10 @@ class ChatAdapter (
                 )
             }
             holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.m1_primary))
+            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.aac_on_primary_container))
         } else {
             val drawable = GradientDrawable().apply {
-                setColor(ContextCompat.getColor(context, R.color.bubble_assistant))
+                setColor(ContextCompat.getColor(context, R.color.aac_bubble_assistant))
                 cornerRadii = floatArrayOf(
                     4f, 4f,
                     36f, 36f,
@@ -72,7 +72,7 @@ class ChatAdapter (
                 )
             }
             holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.m1_surface))
+            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.aac_on_surface))
         }
 
         val textParams = holder.binding.messageText.layoutParams as ConstraintLayout.LayoutParams
@@ -145,6 +145,7 @@ class ChatAdapter (
                 if (saved) android.R.drawable.btn_star_big_on
                 else android.R.drawable.btn_star_big_off
             )
+            star.imageTintList = null
             star.contentDescription = context.getString(
                 if (saved) R.string.favorite_deleted else R.string.favorite_added
             )

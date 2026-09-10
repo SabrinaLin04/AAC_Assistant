@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import android.widget.LinearLayout
 import android.widget.HorizontalScrollView
 import coil.load
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentFavoritesBinding
 
@@ -96,10 +97,16 @@ class FavoritesFragment: Fragment() {
             row.contentDescription = favorite.text
         }
 
-        AlertDialog.Builder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_AACAssistant_Dialog)
             .setView(view)
             .setPositiveButton(R.string.action_close, null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.styleCustomButtons()
+        }
+
+        dialog.show()
 
         viewModel.markAsUsed(favorite.id)
     }
