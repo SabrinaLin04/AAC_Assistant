@@ -86,9 +86,11 @@ class FirestoreRepository {
         contexts().document(contextId).delete().await()
     }
 
+    //non passa da userDoc(): quello risolve uid lanciando se non c'e' utente,
+    //qui serve invece un null perche' i prompt vengono osservati anche prima del login
     private fun promptsDoc(): DocumentReference? =
-        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
-            db.collection("users").document(uid)
+        auth.currentUser?.uid?.let { currentUid ->
+            db.collection("users").document(currentUid)
                 .collection("settings").document("prompts")
         }
 

@@ -6,8 +6,6 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.datepicker.OnSelectionChangedListener
-import com.google.firebase.firestore.auth.User
 import it.lbsl.aacassistant.databinding.ItemContextBinding
 
 class ContextsAdapter (
@@ -16,11 +14,21 @@ class ContextsAdapter (
 ) : ListAdapter<UserContext, ContextsAdapter.VH>(DIFF) {
     private var activeId: String?= null
 
-    //imposta il nuovo ID attivo e, se è cambiato rispetto al precedente, ricarica l'intera lista per aggiornare la UI
+    //imposta il nuovo ID attivo aggiornando solo le due righe coinvolte:
+    //cambia l'indicatore di quella che si spegne e di quella che si accende, non dell'intera lista
     fun setActiveId(id: String?) {
         if (id == activeId) return
+
+        val previous = activeId
         activeId = id
-        notifyDataSetChanged()
+
+        currentList.indexOfFirst { it.id == previous }
+            .takeIf { it >= 0 }
+            ?.let { notifyItemChanged(it) }
+
+        currentList.indexOfFirst { it.id == id }
+            .takeIf { it >= 0 }
+            ?.let { notifyItemChanged(it) }
     }
 
     class VH(val binding: ItemContextBinding) : RecyclerView.ViewHolder(binding.root)

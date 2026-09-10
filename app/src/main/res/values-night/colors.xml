@@ -11,10 +11,8 @@
     <color name="aac_on_primary">#FFFFFF</color>
     <color name="aac_primary_container">#204862</color>
     <color name="aac_on_primary_container">#DCE8F1</color>
-    <color name="aac_primary_accent">#4A7C9F</color>
     <color name="aac_success">#55A384</color>
     <color name="aac_on_success">#003825</color>
-    <color name="aac_success_container">#1A4032</color>
     <color name="aac_error">#E06D6D</color>
     <color name="aac_on_error">#410002</color>
     <color name="aac_error_container">#5C2020</color>
@@ -26,5 +24,4 @@
     <color name="aac_pictogram_background">#FFFFFF</color>
     <color name="status_available">#55A384</color>
     <color name="status_busy">#C9A13B</color>
-    <color name="status_error">#E06D6D</color>
 </resources>

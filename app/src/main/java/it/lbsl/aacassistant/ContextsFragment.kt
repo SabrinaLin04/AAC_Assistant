@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -39,8 +38,6 @@ class ContextsFragment : Fragment() {
         setupSwipeToDelete()
         setupFab()
         observeViewModel()
-
-        viewModel.loadContexts()
     }
 
     private fun setupRecyclerView() {

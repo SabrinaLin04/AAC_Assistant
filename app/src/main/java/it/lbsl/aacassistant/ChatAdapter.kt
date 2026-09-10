@@ -38,8 +38,6 @@ class ChatAdapter (
         holder.binding.message = message
         holder.binding.executePendingBindings() //forza il re-layout immediato tramite Data Binding
 
-        holder.binding.messageText.text = message.text
-
         holder.binding.authorLabel.gravity = if (isUser) Gravity.END else Gravity.START
 
         val params = holder.binding.bubbleColumn.layoutParams

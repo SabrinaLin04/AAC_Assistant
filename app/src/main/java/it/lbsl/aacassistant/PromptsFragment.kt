@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import it.lbsl.aacassistant.databinding.FragmentPromptsBinding
 
 class PromptsFragment : Fragment() {
@@ -44,7 +43,7 @@ class PromptsFragment : Fragment() {
 
         viewModel.saveResult.observe(viewLifecycleOwner) { result ->
             if (result == null) return@observe
-            val msg = if (result) "Prompt salvati" else "Errore nel salvataggio"
+            val msg = if (result) R.string.prompts_saved else R.string.prompts_save_error
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             viewModel.clearSaveResult()
         }
@@ -58,12 +57,13 @@ class PromptsFragment : Fragment() {
         }
 
         binding.resetButton.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Ripristina predefiniti")
-                .setMessage("I prompt personalizzati verranno sostituiti con quelli originali.")
-                .setPositiveButton("Ripristina") { _, _ -> viewModel.resetToDefaults() }
-                .setNegativeButton("Annulla", null)
-                .show()
+            requireContext().showConfirmationDialog(
+                title = getString(R.string.prompts_reset),
+                message = getString(R.string.prompts_reset_confirm_message),
+                positiveButtonText = getString(R.string.prompts_reset),
+                negativeButtonText = getString(R.string.action_cancel),
+                onConfirm = { viewModel.resetToDefaults() }
+            )
         }
     }
 

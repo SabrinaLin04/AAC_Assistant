@@ -212,6 +212,7 @@
                         android:layout_weight="1"
                         android:minHeight="44dp"
                         android:maxLines="4"
+                        android:importantForAutofill="no"
                         android:background="@drawable/input_background"
                         android:gravity="center_vertical"
                         android:hint="@string/chat_input_hint"

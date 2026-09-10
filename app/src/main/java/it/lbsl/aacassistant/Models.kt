@@ -22,7 +22,6 @@ data class UserContext(
     @DocumentId val id: String = "",
     val name: String = "",
     val description: String = "",
-    val isActive: Boolean = false,
     val createdAt: Timestamp = Timestamp.now()
 )
 
@@ -39,9 +38,11 @@ data class PromptConfig(
                     "Ogni frase: 3-4 parole, italiano semplice, una per riga. " +
                     "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
+        //quattro e non cinque: splitSuggestions ne tiene 4 e la modalita' demo ne mostra 4,
+        //chiederne 5 significherebbe generare token poi scartati
         const val DEFAULT_WITH_INCOMING =
-            "Qualcuno mi ha detto: \"{messaggio}\". Suggerisci 5 frasi che potrei rispondere."
+            "Qualcuno mi ha detto: \"{messaggio}\". Suggerisci 4 frasi che potrei rispondere."
 
-        const val DEFAULT_GENERIC = "Suggerisci 5 frasi."
+        const val DEFAULT_GENERIC = "Suggerisci 4 frasi."
     }
 }

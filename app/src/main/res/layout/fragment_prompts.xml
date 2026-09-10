@@ -19,14 +19,14 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Istruzioni di sistema"
+                android:text="@string/prompts_system_title"
                 android:textStyle="bold"
                 android:paddingBottom="4dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Definisce il comportamento generale del modello."
+                android:text="@string/prompts_system_hint"
                 android:textSize="12sp"
                 android:paddingBottom="8dp" />
 
@@ -46,7 +46,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Richiesta con messaggio ricevuto"
+                android:text="@string/prompts_incoming_title"
                 android:textStyle="bold"
                 android:paddingTop="24dp"
                 android:paddingBottom="4dp" />
@@ -54,7 +54,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Usa {messaggio} come segnaposto per il testo ricevuto."
+                android:text="@string/prompts_incoming_hint"
                 android:textSize="12sp"
                 android:paddingBottom="8dp" />
 
@@ -74,7 +74,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Richiesta generica"
+                android:text="@string/prompts_generic_title"
                 android:textStyle="bold"
                 android:paddingTop="24dp"
                 android:paddingBottom="8dp" />
@@ -97,7 +97,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Salva" />
+                android:text="@string/action_save" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/resetButton"
@@ -105,7 +105,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Ripristina predefiniti" />
+                android:text="@string/prompts_reset" />
 
         </LinearLayout>
     </ScrollView>

@@ -15,6 +15,9 @@ import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -103,6 +106,7 @@ class LlmViewModel : ViewModel() {
         engineProvider= LlmEngineProvider(context.filesDir)
         val appCtx = context.applicationContext
         appContext = appCtx
+        promptsRegistration?.remove() //evita di lasciare attivo un listener orfano se getModel viene richiamata
         promptsRegistration = FirestoreRepository().observePrompts { config ->
             promptConfig = config
             // il system prompt si applica alla creazione della conversazione,
@@ -208,52 +212,47 @@ class LlmViewModel : ViewModel() {
         "sul", "sullo", "sulla", "sui", "sugli", "sulle",
         "e", "ed", "o", "od", "ma", "che", "se",
         "mi", "ti", "ci", "vi", "si", "ne", "ce", "ve", "me", "te",
-        "qui", "qua", "li", "la"
+        "qui", "qua", "li"
     )
 
     //analizza la frase filtrando le stopword per trovare e restituire fino a dieci identificatori di pittogrammi univoci corrispondenti
-    private suspend fun findPictogramsFor(sentence: String): List<Int> {
+    //le parole vengono risolte in parallelo: le ricerche non trovate nell'indice locale
+    //richiedono una chiamata di rete, in sequenza il ritardo si sommerebbe su ogni parola
+    private suspend fun findPictogramsFor(sentence: String): List<Int> = coroutineScope {
         val words = sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
             .filter { it.length >= 2 && it !in stopwords }
             .take(20)
 
-        val ids = mutableListOf<Int>()
         val ctx = appContext
 
-        for (word in words) {
-            val id = if (ctx != null) {
-                PictogramRepository.findPictogram(ctx, word)
-            } else {
-                PictogramRepository.findPictogram(word)
+        words
+            .map { word ->
+                async {
+                    if (ctx != null) {
+                        PictogramRepository.findPictogram(ctx, word)
+                    } else {
+                        PictogramRepository.findPictogram(word)
+                    }
+                }
             }
-
-            if (id != null && id !in ids) { //evita duplicati perche' due parole diverse possono corrispondere allo stesso pittogramma
-                ids.add(id)
-            }
-            if (ids.size >= 10) break
-        }
-
-        return ids
-    }
-
-    //cerca i pittogrammi per la frase passata e li associa all'ultimo messaggio presente nella cronologia della chat
-    private suspend fun resolvePictogram(sentence: String) {
-        val ids = findPictogramsFor(sentence)
-        if (ids.isEmpty()) return
-
-        val list = _messages.value.orEmpty().toMutableList()
-        if (list.isEmpty()) return
-        list[list.lastIndex] = list.last().copy(pictogramIds = ids)
-        _messages.value = list
+            .awaitAll() //awaitAll conserva l'ordine delle parole nella frase, che per la CAA e' significativo
+            .filterNotNull()
+            .distinct() //due parole diverse possono corrispondere allo stesso pittogramma
+            .take(10)
     }
 
     //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
     fun setContext(name: String?, description: String?) {
+        //il nome non entra nel system prompt ma finisce nelle metriche: va aggiornato
+        //sempre, anche quando la descrizione e' invariata (contesto rinominato)
+        contextName = name
+
+        //solo la descrizione giustifica il reset: azzerare la chat a ogni rinomina
+        //farebbe perdere all'utente i suggerimenti gia' a schermo
         if (description == contextDescription) return
 
-        contextName = name
         contextDescription = description
         lastIncoming = null
 

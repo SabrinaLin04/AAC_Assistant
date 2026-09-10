@@ -1,11 +1,19 @@
 package it.lbsl.aacassistant
 
 import android.content.Context
+import android.content.res.ColorStateList
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.MaterialShapeDrawable
 
 fun AlertDialog.styleCustomButtons(
     positiveColorRes: Int = R.color.aac_primary,
@@ -66,6 +74,59 @@ fun Context.showConfirmationDialog(
         .setNegativeButton(negativeButtonText) { _, _ -> onCancel() }
         .setOnCancelListener { onCancel() }
         .create()
+
+    dialog.setOnShowListener {
+        dialog.styleCustomButtons()
+    }
+
+    dialog.show()
+}
+
+//mostra il testo ingrandito con la sua striscia di pittogrammi: e' la vista che l'utente
+//gira verso l'interlocutore, usata sia dalla chat che dai preferiti
+fun Context.showSpeakDialog(text: String, pictogramIds: List<Int>) {
+    val view = LayoutInflater.from(this).inflate(R.layout.dialog_speak, null)
+
+    view.findViewById<TextView>(R.id.speakText).text = text
+
+    val row = view.findViewById<LinearLayout>(R.id.pictogramRow)
+    val scroll = view.findViewById<HorizontalScrollView>(R.id.pictogramScroll)
+
+    row.removeAllViews()
+
+    if (pictogramIds.isEmpty()) {
+        scroll.visibility = View.GONE
+    } else {
+        scroll.visibility = View.VISIBLE
+        val size = resources.getDimensionPixelSize(R.dimen.pictogram_max_size)
+        val gap = resources.getDimensionPixelSize(R.dimen.pictogram_gap)
+
+        pictogramIds.forEach { id ->
+            val image = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    marginStart = gap
+                    marginEnd = gap
+                }
+                load(PictogramRepository.imageSource(this@showSpeakDialog, id))
+            }
+            row.addView(image)
+        }
+
+        row.contentDescription = text
+    }
+
+    val dialog = MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_AACAssistant_Dialog)
+        .setView(view)
+        .setPositiveButton(R.string.action_close, null)
+        .create()
+
+    val shape = MaterialShapeDrawable().apply {
+        fillColor = ColorStateList.valueOf(
+            ContextCompat.getColor(this@showSpeakDialog, R.color.aac_surface_container)
+        )
+        setCornerSize(28 * resources.displayMetrics.density)
+    }
+    dialog.window?.setBackgroundDrawable(shape)
 
     dialog.setOnShowListener {
         dialog.styleCustomButtons()

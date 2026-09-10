@@ -1,6 +1,5 @@
 package it.lbsl.aacassistant
 
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -9,24 +8,16 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.HorizontalScrollView
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import coil.load
 import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.shape.MaterialShapeDrawable
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
 
 class SuggestFragment: Fragment() {
@@ -99,9 +90,7 @@ class SuggestFragment: Fragment() {
                 showPictogramDialog(message)
             }
         )
-        val layoutManager = LinearLayoutManager(requireContext())
-        layoutManager.stackFromEnd = false
-        binding.recyclerView.layoutManager = layoutManager
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = chatAdapter
         binding.recyclerView.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
             if (bottom < oldBottom) {
@@ -122,7 +111,7 @@ class SuggestFragment: Fragment() {
 
     //imposta il comportamento della barra di testo, gestendo l'invio dei messaggi e abilitando il pulsante solo se è presente del testo e il modello non è in elaborazione
     private fun setupInputBar() {
-        updateSendButtonTint(false)
+        updateSendButton()
 
         binding.sendButton.setOnClickListener {
             val text = binding.messageInput.text.toString().trim()
@@ -135,13 +124,17 @@ class SuggestFragment: Fragment() {
         binding.messageInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val isGenerating = viewModel.chatState.value is ChatState.Generating
-                val enabled = !s.isNullOrBlank() && !isGenerating
-                binding.sendButton.isEnabled = enabled
-                updateSendButtonTint(enabled)
-            }
+            override fun afterTextChanged(s: Editable?) = updateSendButton()
         })
+    }
+
+    //unico punto in cui si decide se il pulsante invio e' attivo: il testo digitato e lo stato
+    //della generazione arrivano da due callback diverse e prima ognuna ricalcolava per conto suo
+    private fun updateSendButton() {
+        val isGenerating = viewModel.chatState.value is ChatState.Generating
+        val enabled = !binding.messageInput.text.isNullOrBlank() && !isGenerating
+        binding.sendButton.isEnabled = enabled
+        updateSendButtonTint(enabled)
     }
 
     //configura l'azione al tocco sulla barra del contesto per navigare verso la schermata di gestione contesti rimuovendo il fragment corrente dallo stack
@@ -216,9 +209,7 @@ class SuggestFragment: Fragment() {
             binding.messageInput.isEnabled = !isGenerating
             binding.suggestButton.isEnabled = !isGenerating
             binding.suggestProgressBar.visibility = if (isGenerating) View.VISIBLE else View.GONE
-            val enabled = !isGenerating && !binding.messageInput.text.isNullOrBlank()
-            binding.sendButton.isEnabled = enabled
-            updateSendButtonTint(enabled)
+            updateSendButton()
 
             if (isGenerating) {
                 binding.statusIndicator.text = getString(R.string.chat_status_generating)
@@ -261,55 +252,7 @@ class SuggestFragment: Fragment() {
     //mostra un dialog contenente il testo e i pittogrammi ingranditi del messaggio toccato
     private fun showPictogramDialog(message: ChatMessage) {
         if (message.pictogramIds.isEmpty()) return
-
-        val view = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_speak, null)
-
-        view.findViewById<TextView>(R.id.speakText).text = message.text
-
-        val row = view.findViewById<LinearLayout>(R.id.pictogramRow)
-        val scroll = view.findViewById<HorizontalScrollView>(R.id.pictogramScroll)
-
-        row.removeAllViews()
-
-        if (message.pictogramIds.isEmpty()) {
-            scroll.visibility = View.GONE
-        } else {
-            scroll.visibility = View.VISIBLE
-            val size = resources.getDimensionPixelSize(R.dimen.pictogram_max_size)
-            val gap = resources.getDimensionPixelSize(R.dimen.pictogram_gap)
-
-            message.pictogramIds.forEach { id ->
-                val image = ImageView(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                        marginStart = gap
-                        marginEnd = gap
-                    }
-                    load(PictogramRepository.imageSource(requireContext(), id))
-                }
-                row.addView(image)
-            }
-
-            row.contentDescription = message.text
-        }
-
-        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_AACAssistant_Dialog)
-            .setView(view)
-            .setPositiveButton(R.string.action_close, null)
-            .create()
-
-        val surfaceColor = ContextCompat.getColor(requireContext(), R.color.aac_surface_container)
-        val shape = MaterialShapeDrawable().apply {
-            fillColor = ColorStateList.valueOf(surfaceColor)
-            setCornerSize(28 * resources.displayMetrics.density)
-        }
-        dialog.window?.setBackgroundDrawable(shape)
-
-        dialog.setOnShowListener {
-            dialog.styleCustomButtons()
-        }
-
-        dialog.show()
+        requireContext().showSpeakDialog(message.text, message.pictogramIds)
     }
 
 }

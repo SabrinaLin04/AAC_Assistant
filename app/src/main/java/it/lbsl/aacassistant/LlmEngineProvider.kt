@@ -50,8 +50,4 @@ class LlmEngineProvider(private val filesDir: File) {
         return target.absolutePath
     }
 
-    fun select(model: ModelInfo) {
-        selected = model
-    }
-
 }
