@@ -6,6 +6,7 @@
     <string name="title_suggest">Assistente CAA</string>
     <string name="title_favorites">Preferiti</string>
     <string name="title_contexts">Contesti</string>
+    <string name="title_prompts">Prompt AI</string>
     <string name="action_logout">Esci</string>
 
     <string name="model_loading_title">Caricamento del modello</string>

@@ -25,7 +25,7 @@
 
             <HorizontalScrollView
                 android:id="@+id/pictogramScroll"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
                 android:background="@drawable/bg_pictogram_strip"
@@ -33,7 +33,9 @@
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="6dp"
                 android:scrollbars="horizontal"
+                app:layout_constrainedWidth="true"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
@@ -50,6 +52,7 @@
                 android:id="@+id/favoriteText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:textAppearance="@style/TextAppearance.App.Message"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/usageCount"
@@ -69,9 +72,8 @@
                 android:paddingVertical="4dp"
                 android:textAppearance="@style/TextAppearance.App.Caption"
                 android:textColor="@color/aac_on_primary_container"
-                app:layout_constraintBottom_toBottomOf="@id/favoriteText"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/favoriteText"
                 tools:text="12" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

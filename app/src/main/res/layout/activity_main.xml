@@ -52,6 +52,7 @@
                 android:id="@+id/drawerRoot"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="?attr/colorSurface"
                 android:orientation="vertical">
 
                 <androidx.core.widget.NestedScrollView
@@ -72,6 +73,7 @@
                             android:id="@+id/drawerMenuView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:background="@android:color/transparent"
                             app:menu="@menu/drawer_menu" />
 
                     </LinearLayout>

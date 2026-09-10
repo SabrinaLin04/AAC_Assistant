@@ -1,24 +1,24 @@
 package it.lbsl.aacassistant
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
-import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import androidx.annotation.StringRes
-import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 sealed interface ModelState {
@@ -94,6 +94,8 @@ class LlmViewModel : ViewModel() {
     private var appContext: Context? = null
 
     private var engineProvider: LlmEngineProvider? = null
+    private var promptConfig = PromptConfig()
+    private var promptsRegistration: ListenerRegistration? = null
 
     //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
     fun getModel(context: Context) {
@@ -101,6 +103,12 @@ class LlmViewModel : ViewModel() {
         engineProvider= LlmEngineProvider(context.filesDir)
         val appCtx = context.applicationContext
         appContext = appCtx
+        promptsRegistration = FirestoreRepository().observePrompts { config ->
+            promptConfig = config
+            // il system prompt si applica alla creazione della conversazione,
+            // quindi va ricreata perché la modifica abbia effetto
+            if (engine != null) createConversation()
+        }
         viewModelScope.launch {
             PictogramRepository.loadCoreIndex(appCtx)
             PictogramRepository.loadLemmatizer(appCtx)
@@ -135,10 +143,7 @@ class LlmViewModel : ViewModel() {
 
     //costruisce le istruzioni di sistema per il modello integrando la descrizione del contesto attuale se disponibile
     private fun buildSystemPrompt(): String {
-        val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
-                "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
-                "Ogni frase: 3-10 parole, italiano semplice, una per riga. " +
-                "Nessuna numerazione, nessuna virgoletta, nessun commento."
+        val base = promptConfig.systemPrompt
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
@@ -285,14 +290,8 @@ class LlmViewModel : ViewModel() {
             }
 
             val prompt = lastIncoming?.let {
-                //se qualcuno ha scritto qualcosa il primo suggerisci da frasi inerenti
-                "Qualcuno mi ha detto: \"$it\". Suggerisci 5 frasi che potrei rispondere."
-            } ?: listOf(
-                "Suggerisci 5 frasi.",
-                "Proponi 5 frasi utili adesso.",
-                "Scrivi 5 frasi possibili.",
-                "Genera 5 frasi per questo momento."
-            ).random()
+                promptConfig.promptWithIncoming.replace("{messaggio}", it)
+            } ?: promptConfig.promptGeneric
 
             val accumulated = StringBuilder()
 
@@ -442,6 +441,7 @@ class LlmViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
+        promptsRegistration?.remove()
         conversation?.close()
         engine?.close()
         conversation = null

@@ -1,22 +1,23 @@
 package it.lbsl.aacassistant
 
-import androidx.appcompat.app.AlertDialog
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.isVisible
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.LinearLayout
-import android.widget.HorizontalScrollView
 import coil.load
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentFavoritesBinding
 
@@ -101,6 +102,13 @@ class FavoritesFragment: Fragment() {
             .setView(view)
             .setPositiveButton(R.string.action_close, null)
             .create()
+
+        val surfaceColor = ContextCompat.getColor(requireContext(), R.color.aac_surface_container)
+        val shape = MaterialShapeDrawable().apply {
+            fillColor = ColorStateList.valueOf(surfaceColor)
+            setCornerSize(28 * resources.displayMetrics.density)
+        }
+        dialog.window?.setBackgroundDrawable(shape)
 
         dialog.setOnShowListener {
             dialog.styleCustomButtons()

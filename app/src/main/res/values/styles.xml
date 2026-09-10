@@ -51,11 +51,11 @@
     <style name="ThemeOverlay.AACAssistant.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorPrimary">@color/aac_primary</item>
         <item name="colorOnPrimary">@color/aac_on_primary</item>
-        <item name="colorSurface">@android:color/white</item>
-        <item name="colorSurfaceContainer">@android:color/white</item>
-        <item name="colorSurfaceContainerHigh">@android:color/white</item>
-        <item name="colorSurfaceContainerHighest">@android:color/white</item>
-        <item name="android:colorBackground">@android:color/white</item>
+        <item name="colorSurface">@color/aac_surface_container</item>
+        <item name="colorSurfaceContainer">@color/aac_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/aac_surface_container</item>
+        <item name="colorSurfaceContainerHighest">@color/aac_surface_container</item>
+        <item name="android:colorBackground">@color/aac_surface_container</item>
     </style>
 
     <style name="Theme.AACAssistant.FirebaseUI" parent="FirebaseUI">

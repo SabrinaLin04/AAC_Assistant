@@ -1,31 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="aac_surface">#1B1B1D</color>
-    <color name="aac_surface_variant">#252529</color>
-    <color name="aac_surface_container">#2E2E33</color>
-    <color name="aac_outline">#55555C</color>
-    <color name="aac_outline_variant">#3A3A40</color>
-    <color name="aac_on_surface">#E6E6E8</color>
-    <color name="aac_on_surface_variant">#B4B4BA</color>
-    <color name="aac_primary">#3B607B</color>
+    <color name="aac_surface">#121316</color>
+    <color name="aac_surface_variant">#22242A</color>
+    <color name="aac_surface_container">#1E2026</color>
+    <color name="aac_outline">#44474E</color>
+    <color name="aac_outline_variant">#32353B</color>
+    <color name="aac_on_surface">#E2E2E6</color>
+    <color name="aac_on_surface_variant">#C4C6CF</color>
+    <color name="aac_primary">#426F8F</color>
     <color name="aac_on_primary">#FFFFFF</color>
-    <color name="aac_primary_container">#2C4759</color>
-    <color name="aac_on_primary_container">#CFE1EE</color>
-    <color name="aac_primary_accent">#8CB4D2</color>
-    <color name="aac_success">#7FB79C</color>
-    <color name="aac_on_success">#0E2A1F</color>
-    <color name="aac_success_container">#2A4438</color>
-    <color name="aac_error">#E38A8A</color>
-    <color name="aac_on_error">#3A1212</color>
-    <color name="aac_error_container">#4A2222</color>
-    <color name="aac_on_error_container">#F2D4D4</color>
-    <color name="aac_warning_container">#3D3520</color>
-    <color name="aac_on_warning_container">#E8D9A8</color>
-    <color name="aac_bubble_assistant">#2E2E33</color>
-    <color name="aac_bubble_user">#2C4759</color>
-    <color name="aac_pictogram_background">#F2F2F4</color>
-    <color name="status_available">#7FB79C</color>
-    <color name="status_busy">#D6BC72</color>
-    <color name="status_error">#E38A8A</color>
-
+    <color name="aac_primary_container">#204862</color>
+    <color name="aac_on_primary_container">#DCE8F1</color>
+    <color name="aac_primary_accent">#4A7C9F</color>
+    <color name="aac_success">#55A384</color>
+    <color name="aac_on_success">#003825</color>
+    <color name="aac_success_container">#1A4032</color>
+    <color name="aac_error">#E06D6D</color>
+    <color name="aac_on_error">#410002</color>
+    <color name="aac_error_container">#5C2020</color>
+    <color name="aac_on_error_container">#F5E2E2</color>
+    <color name="aac_warning_container">#423610</color>
+    <color name="aac_on_warning_container">#F5EDD8</color>
+    <color name="aac_bubble_assistant">#1E2026</color>
+    <color name="aac_bubble_user">#204862</color>
+    <color name="aac_pictogram_background">#FFFFFF</color>
+    <color name="status_available">#55A384</color>
+    <color name="status_busy">#C9A13B</color>
+    <color name="status_error">#E06D6D</color>
 </resources>

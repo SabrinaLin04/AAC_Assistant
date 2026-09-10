@@ -1,5 +1,6 @@
 package it.lbsl.aacassistant
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -25,6 +26,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.MaterialShapeDrawable
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
 
 class SuggestFragment: Fragment() {
@@ -295,6 +297,13 @@ class SuggestFragment: Fragment() {
             .setView(view)
             .setPositiveButton(R.string.action_close, null)
             .create()
+
+        val surfaceColor = ContextCompat.getColor(requireContext(), R.color.aac_surface_container)
+        val shape = MaterialShapeDrawable().apply {
+            fillColor = ColorStateList.valueOf(surfaceColor)
+            setCornerSize(28 * resources.displayMetrics.density)
+        }
+        dialog.window?.setBackgroundDrawable(shape)
 
         dialog.setOnShowListener {
             dialog.styleCustomButtons()

@@ -1,8 +1,10 @@
 package it.lbsl.aacassistant
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
@@ -82,5 +84,28 @@ class FirestoreRepository {
 
     suspend fun deleteContext(contextId: String) {
         contexts().document(contextId).delete().await()
+    }
+
+    private fun promptsDoc(): DocumentReference? =
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            db.collection("users").document(uid)
+                .collection("settings").document("prompts")
+        }
+
+    fun savePrompts(config: PromptConfig, onDone: (Boolean) -> Unit) {
+        val doc = promptsDoc() ?: run { onDone(false); return }
+        doc.set(config, SetOptions.merge())
+            .addOnSuccessListener { onDone(true) }
+            .addOnFailureListener { onDone(false) }
+    }
+
+    // listener in tempo reale: se l'utente salva, chi ascolta viene aggiornato subito
+    fun observePrompts(onChange: (PromptConfig) -> Unit): ListenerRegistration? {
+        val doc = promptsDoc() ?: return null
+        return doc.addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            val config = snapshot?.toObject(PromptConfig::class.java) ?: PromptConfig()
+            onChange(config)
+        }
     }
 }
