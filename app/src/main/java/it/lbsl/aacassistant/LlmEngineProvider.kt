@@ -19,22 +19,15 @@ class LlmEngineProvider(private val filesDir: File) {
         ModelInfo("gemma-4-E2B-it.litertlm", "Gemma 4 E2B CPU", Backend.CPU()),
     )
 
-    fun availableModels(): List<ModelInfo> =
-        knownModels.filter { File(filesDir, it.filename).exists() }
-
-    var selected: ModelInfo? = availableModels().firstOrNull()
+    //il modello in uso, valorizzato da prepareModel quando il file è pronto in filesDir
+    var selected: ModelInfo? = null
         private set
 
     //cerca i modelli: prima in filesDir, se non c'è prova a copiarlo da /data/local/tmp/
-    fun discoverModels(): List<ModelInfo> {
-        return knownModels.filter { model ->
-            val target = File(filesDir, model.filename)
-            if (target.exists()) return@filter true
-
-            val source = File("/data/local/tmp/${model.filename}")
-            source.exists()
+    fun discoverModels(): List<ModelInfo> =
+        knownModels.filter { model ->
+            File(filesDir, model.filename).exists() || stagedFile(model).exists()
         }
-    }
 
     //copia il modello da /data/local/tmp/ a filesDir se necessario restituisce il path finale, o null se il file non esiste da nessuna parte
     fun prepareModel(model: ModelInfo): String? {
@@ -43,11 +36,19 @@ class LlmEngineProvider(private val filesDir: File) {
             selected = model
             return target.absolutePath
         }
-         val source = File("/data/local/tmp/${model.filename}")
+
+        val source = stagedFile(model)
         if (!source.exists()) return null
         source.copyTo(target)
         selected = model
         return target.absolutePath
+    }
+
+    private fun stagedFile(model: ModelInfo) = File(STAGING_DIR, model.filename)
+
+    companion object {
+        //i modelli vengono spinti qui con adb push, non essendo distribuibili con l'apk
+        private const val STAGING_DIR = "/data/local/tmp"
     }
 
 }

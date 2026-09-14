@@ -1,40 +1,29 @@
 package it.lbsl.aacassistant
 
-import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import java.io.File
 
 data class MetricsEntry(
-    val timestamp: String,
-    val ttftMs: Long,
-    val totalMs: Long,
-    val nChars: Int,
-    val nChunks: Int,
-    val charPerSec: Double,
-    val backend: String,
-    val model: String,
-    val contextId: String
-) {
-    fun toJson(): String {
-        return JSONObject().apply {
-            put("timestamp", timestamp)
-            put("ttft_ms", ttftMs)
-            put("total_ms", totalMs)
-            put("n_chars", nChars)
-            put("n_chunks", nChunks)
-            put("char_s", charPerSec)
-            put("backend", backend)
-            put("model", model)
-            put("context_id", contextId)
-        }.toString()
-    }
-}
+    @SerializedName("timestamp") val timestamp: String,
+    @SerializedName("ttft_ms") val ttftMs: Long,
+    @SerializedName("total_ms") val totalMs: Long,
+    @SerializedName("n_chars") val nChars: Int,
+    @SerializedName("n_chunks") val nChunks: Int,
+    @SerializedName("char_s") val charPerSec: Double,
+    @SerializedName("backend") val backend: String,
+    @SerializedName("model") val model: String,
+    @SerializedName("context_id") val contextId: String
+)
 
 //gestisce la creazione della cartella e la scrittura dei log
-class MetricsLogger(private val filesDir: File) {
+class MetricsLogger(filesDir: File) {
     private val metricsDir = File(filesDir, "metrics").apply { mkdirs() }
+    private val gson = Gson()
 
+    //una riga JSON per generazione: il formato jsonl si legge da pandas senza conversioni
     fun log(entry: MetricsEntry) {
         val file = File(metricsDir, "llm_metrics.jsonl")
-        file.appendText(entry.toJson() + "\n")
+        file.appendText(gson.toJson(entry) + "\n")
     }
 }

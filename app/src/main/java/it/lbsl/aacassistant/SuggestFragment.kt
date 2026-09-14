@@ -50,8 +50,8 @@ class SuggestFragment: Fragment() {
         setupContextBar()
         observeViewModel()
 
-        if (viewModel.modelState.value is ModelState.Idle){
-            viewModel.getModel(requireContext().applicationContext)
+        if (viewModel.modelState.value is ModelState.Idle) {
+            viewModel.loadModel(requireContext().applicationContext)
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
@@ -68,13 +68,13 @@ class SuggestFragment: Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding=null
+        _binding = null
     }
 
     //configura la recycler view per la chat impostando l'adapter, la logica per salvare i preferiti e lo scorrimento automatico all'ultimo messaggio quando cambia il layout
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
-            isFavorite = { text -> favoritesViewModel.isFavorite(text)},
+            isFavorite = { text -> favoritesViewModel.isFavorite(text) },
             onToggleFavorite = { text, pictogramIds ->
                 val wasSaved = favoritesViewModel.isFavorite(text)
                 favoritesViewModel.toggleFavorite(text, pictogramIds)
@@ -128,8 +128,7 @@ class SuggestFragment: Fragment() {
         })
     }
 
-    //unico punto in cui si decide se il pulsante invio e' attivo: il testo digitato e lo stato
-    //della generazione arrivano da due callback diverse e prima ognuna ricalcolava per conto suo
+    //abilita l'invio solo se c'è del testo scritto e nessuna generazione è in corso
     private fun updateSendButton() {
         val isGenerating = viewModel.chatState.value is ChatState.Generating
         val enabled = !binding.messageInput.text.isNullOrBlank() && !isGenerating
@@ -162,7 +161,7 @@ class SuggestFragment: Fragment() {
             when (state) {
                 is ModelState.Idle -> { }
                 is ModelState.Initializing -> showLoading(getString(state.messageRes))
-                is ModelState.Ready -> showChat( demo = false)
+                is ModelState.Ready -> showChat(demo = false)
                 is ModelState.DemoMode -> showChat(demo = true)
                 is ModelState.Error -> showError(
                     buildString {
@@ -220,7 +219,11 @@ class SuggestFragment: Fragment() {
             }
 
             if (state is ChatState.Error) {
-                Snackbar.make(binding.root, getString(state.messageRes), Snackbar.LENGTH_LONG).show()
+                val message = buildString {
+                    append(getString(state.messageRes))
+                    state.detail?.let { append(": ").append(it) }
+                }
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
                 viewModel.clearChatError()
             }
         }

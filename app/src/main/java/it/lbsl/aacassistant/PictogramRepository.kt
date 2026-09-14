@@ -16,8 +16,7 @@ object PictogramRepository {
     private const val TAG = "Pictogram"
     private const val LANG = "it"
 
-    //sincronizzata: le ricerche partono in parallelo da findPictogramsFor,
-    //una HashMap nuda si corromperebbe sotto scritture concorrenti
+    //sincronizzata perché le ricerche di una stessa frase partono in parallelo
     private val cache = Collections.synchronizedMap(mutableMapOf<String, Int?>())
     private var coreIndex: Map<String, Int>? = null
     private var lemmatizer: Lemmatizer? = null

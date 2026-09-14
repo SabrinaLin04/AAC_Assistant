@@ -1,6 +1,7 @@
 package it.lbsl.aacassistant
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
@@ -23,7 +24,14 @@ class ContextsViewModel : ViewModel() {
     private val _activeContextId = MutableLiveData<String?>(null)
     val activeContextId: LiveData<String?> = _activeContextId
 
-    val showEmptyState: LiveData<Boolean> = emptyStateOf(_contexts, _isLoading)
+    //vero quando la lista è vuota e il caricamento è finito
+    val showEmptyState: LiveData<Boolean> = MediatorLiveData<Boolean>().apply {
+        fun update() {
+            value = (_contexts.value?.isEmpty() == true) && (_isLoading.value != true)
+        }
+        addSource(_contexts) { update() }
+        addSource(_isLoading) { update() }
+    }
 
     val activeContext: LiveData<UserContext?> = _activeContextId.map { id ->
         _contexts.value?.firstOrNull { it.id == id }

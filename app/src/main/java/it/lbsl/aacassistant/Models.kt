@@ -11,7 +11,7 @@ data class UserProfile(
 )
 
 data class Favorite(
-    @DocumentId val id: String ="",
+    @DocumentId val id: String = "",
     val text: String = "",
     val pictogramIds: List<Int> = emptyList(),
     val usageCount: Int = 0,
@@ -38,8 +38,7 @@ data class PromptConfig(
                     "Ogni frase: 3-4 parole, italiano semplice, una per riga. " +
                     "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
-        //quattro e non cinque: splitSuggestions ne tiene 4 e la modalita' demo ne mostra 4,
-        //chiederne 5 significherebbe generare token poi scartati
+        //quattro frasi, quante ne mostra la schermata dei suggerimenti
         const val DEFAULT_WITH_INCOMING =
             "Qualcuno mi ha detto: \"{messaggio}\". Suggerisci 4 frasi che potrei rispondere."
 

@@ -50,7 +50,7 @@ class FirestoreRepository {
         defaults.forEach { (name, description)  -> addContext(name, description)}
     }
     suspend fun addFavorite(text: String, pictogramIds: List<Int> = emptyList()) : String {
-        return favorites().add(Favorite(text=text, pictogramIds = pictogramIds)).await().id
+        return favorites().add(Favorite(text = text, pictogramIds = pictogramIds)).await().id
     }
 
     suspend fun addContext(name: String, description: String) : String {
@@ -66,11 +66,11 @@ class FirestoreRepository {
     suspend fun getActiveContextId(): String? =
         userDoc().get().await().getString("activeContextId")
 
-    suspend fun  incrementFavoriteUsage (favoriteId: String) {
+    suspend fun incrementFavoriteUsage(favoriteId: String) {
         favorites().document(favoriteId).update("usageCount", FieldValue.increment(1)).await()
     }
 
-    suspend fun updateContext (contextId: String, name : String, description: String) {
+    suspend fun updateContext(contextId: String, name: String, description: String) {
         contexts().document(contextId).update(mapOf("name" to name, "description" to description)).await()
     }
 
@@ -86,8 +86,7 @@ class FirestoreRepository {
         contexts().document(contextId).delete().await()
     }
 
-    //non passa da userDoc(): quello risolve uid lanciando se non c'e' utente,
-    //qui serve invece un null perche' i prompt vengono osservati anche prima del login
+    //restituisce null senza utente: i prompt vengono osservati anche prima del login
     private fun promptsDoc(): DocumentReference? =
         auth.currentUser?.uid?.let { currentUid ->
             db.collection("users").document(currentUid)

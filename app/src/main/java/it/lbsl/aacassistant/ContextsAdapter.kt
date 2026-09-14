@@ -14,8 +14,7 @@ class ContextsAdapter (
 ) : ListAdapter<UserContext, ContextsAdapter.VH>(DIFF) {
     private var activeId: String?= null
 
-    //imposta il nuovo ID attivo aggiornando solo le due righe coinvolte:
-    //cambia l'indicatore di quella che si spegne e di quella che si accende, non dell'intera lista
+    //aggiorna l'indicatore sulla riga che si spegne e su quella che si accende
     fun setActiveId(id: String?) {
         if (id == activeId) return
 
@@ -48,7 +47,7 @@ class ContextsAdapter (
     fun itemAt(position: Int) : UserContext = getItem(position)
 
     companion object {
-        private val DIFF= object : DiffUtil.ItemCallback<UserContext>() {
+        private val DIFF = object : DiffUtil.ItemCallback<UserContext>() {
 
             //controlla se i due elementi rappresentano la stessa entità logica confrontando il loro id
             override fun areItemsTheSame(oldItem: UserContext, newItem: UserContext): Boolean {

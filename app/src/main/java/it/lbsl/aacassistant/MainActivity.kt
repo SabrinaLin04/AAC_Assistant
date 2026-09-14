@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showModelSwitchDialog() {
         val llmViewModel = androidx.lifecycle.ViewModelProvider(this)[LlmViewModel::class.java]
-        val models = llmViewModel.getAvailableModels()
+        val models = llmViewModel.availableModels
 
         if (models.size < 2) {
             MaterialAlertDialogBuilder(this)
@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val current = llmViewModel.getCurrentModel()
+        val current = llmViewModel.currentModel
         val names = models.map {
             if (it == current) getString(R.string.model_switch_current, it.label) else it.label
         }.toTypedArray()

@@ -41,7 +41,7 @@ class FavoritesFragment: Fragment() {
         adapter = FavoritesAdapter{ favorite ->
             showFavorite(favorite)
         }
-        binding.favoritesRecycler.layoutManager= LinearLayoutManager(requireContext())
+        binding.favoritesRecycler.layoutManager = LinearLayoutManager(requireContext())
         binding.favoritesRecycler.adapter = adapter
     }
 

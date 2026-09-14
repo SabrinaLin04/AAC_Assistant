@@ -82,8 +82,7 @@ fun Context.showConfirmationDialog(
     dialog.show()
 }
 
-//mostra il testo ingrandito con la sua striscia di pittogrammi: e' la vista che l'utente
-//gira verso l'interlocutore, usata sia dalla chat che dai preferiti
+//mostra il testo ingrandito con i suoi pittogrammi, la vista che si gira verso l'interlocutore
 fun Context.showSpeakDialog(text: String, pictogramIds: List<Int>) {
     val view = LayoutInflater.from(this).inflate(R.layout.dialog_speak, null)
 
