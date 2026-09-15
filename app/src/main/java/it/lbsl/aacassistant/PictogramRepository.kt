@@ -9,13 +9,15 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 import java.text.Normalizer
+import java.util.Collections
 import java.util.Locale
 
 object PictogramRepository {
     private const val TAG = "Pictogram"
     private const val LANG = "it"
 
-    private val cache = mutableMapOf<String, Int?>()
+    //sincronizzata perché le ricerche di una stessa frase partono in parallelo
+    private val cache = Collections.synchronizedMap(mutableMapOf<String, Int?>())
     private var coreIndex: Map<String, Int>? = null
     private var lemmatizer: Lemmatizer? = null
     private val loadMutex = Mutex()

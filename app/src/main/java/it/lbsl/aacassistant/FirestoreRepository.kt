@@ -1,8 +1,10 @@
 package it.lbsl.aacassistant
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
@@ -48,7 +50,7 @@ class FirestoreRepository {
         defaults.forEach { (name, description)  -> addContext(name, description)}
     }
     suspend fun addFavorite(text: String, pictogramIds: List<Int> = emptyList()) : String {
-        return favorites().add(Favorite(text=text, pictogramIds = pictogramIds)).await().id
+        return favorites().add(Favorite(text = text, pictogramIds = pictogramIds)).await().id
     }
 
     suspend fun addContext(name: String, description: String) : String {
@@ -64,11 +66,11 @@ class FirestoreRepository {
     suspend fun getActiveContextId(): String? =
         userDoc().get().await().getString("activeContextId")
 
-    suspend fun  incrementFavoriteUsage (favoriteId: String) {
+    suspend fun incrementFavoriteUsage(favoriteId: String) {
         favorites().document(favoriteId).update("usageCount", FieldValue.increment(1)).await()
     }
 
-    suspend fun updateContext (contextId: String, name : String, description: String) {
+    suspend fun updateContext(contextId: String, name: String, description: String) {
         contexts().document(contextId).update(mapOf("name" to name, "description" to description)).await()
     }
 
@@ -82,5 +84,29 @@ class FirestoreRepository {
 
     suspend fun deleteContext(contextId: String) {
         contexts().document(contextId).delete().await()
+    }
+
+    //restituisce null senza utente: i prompt vengono osservati anche prima del login
+    private fun promptsDoc(): DocumentReference? =
+        auth.currentUser?.uid?.let { currentUid ->
+            db.collection("users").document(currentUid)
+                .collection("settings").document("prompts")
+        }
+
+    fun savePrompts(config: PromptConfig, onDone: (Boolean) -> Unit) {
+        val doc = promptsDoc() ?: run { onDone(false); return }
+        doc.set(config, SetOptions.merge())
+            .addOnSuccessListener { onDone(true) }
+            .addOnFailureListener { onDone(false) }
+    }
+
+    // listener in tempo reale: se l'utente salva, chi ascolta viene aggiornato subito
+    fun observePrompts(onChange: (PromptConfig) -> Unit): ListenerRegistration? {
+        val doc = promptsDoc() ?: return null
+        return doc.addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            val config = snapshot?.toObject(PromptConfig::class.java) ?: PromptConfig()
+            onChange(config)
+        }
     }
 }

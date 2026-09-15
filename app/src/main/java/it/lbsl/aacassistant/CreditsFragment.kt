@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import it.lbsl.aacassistant.BuildConfig
 import it.lbsl.aacassistant.databinding.FragmentCreditsBinding
 
 class CreditsFragment : Fragment() {

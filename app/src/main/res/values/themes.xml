@@ -1,49 +1,30 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.AACAssistant" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/m_primary</item>
-        <item name="colorOnPrimary">@color/m1_primary</item>
-        <item name="colorPrimaryContainer">@color/m_primary_container</item>
-        <item name="colorOnPrimaryContainer">@color/m1_primary_container</item>
-
-        <item name="colorSecondary">@color/m_secondary</item>
-        <item name="colorOnSecondary">@color/m1_secondary</item>
-
-        <item name="colorSurface">@color/m_surface</item>
-        <item name="colorOnSurface">@color/m1_surface</item>
-        <item name="colorSurfaceVariant">@color/m_surface_variant</item>
-        <item name="colorOnSurfaceVariant">@color/m1_surface_variant</item>
-
-        <item name="android:colorBackground">@color/m_background</item>
-        <item name="colorOutline">@color/m_outline</item>
-
-        <item name="colorError">@color/m_error</item>
-        <item name="colorOnError">@color/m1_error</item>
-
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowBackground">?attr/colorSurface</item>
-
-    </style>
-
-    <style name="ThemeOverlay.AACAssistant.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="dialogCornerRadius">28dp</item>
-        <item name="materialAlertDialogTitleTextStyle">@style/Dialog.Title</item>
-        <item name="android:background">?attr/colorSurface</item>
-    </style>
-
-    <style name="Dialog.Title" parent="MaterialAlertDialog.Material3.Title.Text">
-        <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:textSize">20sp</item>
-    </style>
-
-    <style name="Theme.AACAssistant" parent="Base.Theme.AACAssistant" />
-
-    <style name="Theme.AACAssistant.FirebaseUI" parent="FirebaseUI">
-        <item name="colorPrimary">@color/m_primary</item>
-        <item name="colorPrimaryDark">@color/m_primary</item>
-        <item name="colorAccent">@color/m_primary</item>
-        <item name="android:statusBarColor">@color/m_primary</item>
+    <style name="Theme.AACAssistant" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/aac_primary</item>
+        <item name="colorOnPrimary">@color/aac_on_primary</item>
+        <item name="colorPrimaryContainer">@color/aac_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/aac_on_primary_container</item>
+        <item name="colorSecondary">@color/aac_primary</item>
+        <item name="colorOnSecondary">@color/aac_on_primary</item>
+        <item name="colorSecondaryContainer">@color/aac_primary_container</item>
+        <item name="colorOnSecondaryContainer">@color/aac_on_primary_container</item>
+        <item name="android:colorBackground">@color/aac_surface</item>
+        <item name="colorSurface">@color/aac_surface</item>
+        <item name="colorOnSurface">@color/aac_on_surface</item>
+        <item name="colorSurfaceVariant">@color/aac_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/aac_on_surface_variant</item>
+        <item name="colorOutline">@color/aac_outline</item>
+        <item name="colorOutlineVariant">@color/aac_outline_variant</item>
+        <item name="colorError">@color/aac_error</item>
+        <item name="colorOnError">@color/aac_on_error</item>
+        <item name="colorErrorContainer">@color/aac_error_container</item>
+        <item name="colorOnErrorContainer">@color/aac_on_error_container</item>
+        <item name="android:statusBarColor">@color/aac_primary</item>
+        <item name="android:navigationBarColor">@color/aac_surface</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+        <item name="materialButtonStyle">@style/Widget.AAC.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.AAC.Card</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.App.Body</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.App.Title</item>
     </style>
 </resources>

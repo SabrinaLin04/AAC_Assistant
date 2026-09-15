@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
     <data>
-        <import type="android.view.View" />
         <variable
             name="message"
             type="it.lbsl.aacassistant.ChatMessage" />
@@ -14,94 +15,90 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="14dp"
-        android:paddingVertical="3dp">
+        android:paddingVertical="6dp">
 
         <TextView
             android:id="@+id/authorLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="6dp"
-            android:paddingBottom="2dp"
+            android:paddingBottom="4dp"
             android:textAppearance="@style/TextAppearance.App.Caption"
-            android:text='@{message.author.equals("user") ? @string/chat_author_user : @string/chat_author_assistant}' />
+            android:text='@{message.author.equals("user") ? @string/chat_author_user : @string/chat_author_assistant}'
+            tools:text="Assistente" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/bubbleRow"
+        <LinearLayout
+            android:id="@+id/bubbleColumn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/bubbleColumn"
-                android:layout_width="0dp"
+            <HorizontalScrollView
+                android:id="@+id/pictogramScrollView"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_pictogram_strip"
+                android:fadeScrollbars="false"
+                android:focusable="true"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="8dp"
+                android:scrollbarSize="4dp"
+                android:scrollbars="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
 
-                <HorizontalScrollView
-                    android:id="@+id/pictogramScrollView"
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:id="@+id/pictogramStrip"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fillViewport="true"
-                    android:scrollbars="horizontal"
-                    android:fadeScrollbars="false"
-                    android:scrollbarSize="4dp"
-                    android:layout_marginBottom="6dp"
-                    android:visibility="gone">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal" />
 
-                    <LinearLayout
-                        android:id="@+id/pictogramStrip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical" />
+            </HorizontalScrollView>
 
-                </HorizontalScrollView>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/textBubbleRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/textBubbleRow"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/messageText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:paddingHorizontal="18dp"
+                    android:paddingVertical="14dp"
+                    android:textAppearance="@style/TextAppearance.App.Message"
+                    android:text="@{message.text}"
+                    app:layout_constrainedWidth="true"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/favoriteStar"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintHorizontal_chainStyle="packed"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    tools:text="Mi piace giocare con i miei figli" />
 
-                    <TextView
-                        android:id="@+id/messageText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="10dp"
-                        android:lineSpacingExtra="2dp"
-                        android:textAppearance="@style/TextAppearance.App.Message"
-                        android:text="@{message.text}"
-                        app:layout_constrainedWidth="true"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/favoriteStar"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintHorizontal_chainStyle="packed"
-                        app:layout_constraintHorizontal_bias="0.0" />
+                <ImageButton
+                    android:id="@+id/favoriteStar"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="14dp"
+                    android:src="@android:drawable/btn_star_big_off"
+                    android:contentDescription="@string/action_toggle_favorite"
+                    app:layout_constraintStart_toEndOf="@id/messageText"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/messageText"
+                    app:layout_constraintBottom_toBottomOf="@id/messageText"
+                    app:layout_constraintHorizontal_bias="0.0" />
 
-                    <ImageButton
-                        android:id="@+id/favoriteStar"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_marginStart="4dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:padding="12dp"
-                        android:src="@android:drawable/btn_star_big_off"
-                        android:contentDescription="@string/action_toggle_favorite"
-                        android:visibility='@{message.author.equals("user") ? View.GONE : View.VISIBLE}'
-                        app:layout_constraintStart_toEndOf="@id/messageText"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@id/messageText"
-                        app:layout_constraintBottom_toBottomOf="@id/messageText"
-                        app:layout_constraintHorizontal_bias="0.0" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </LinearLayout>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
 
     </LinearLayout>
 </layout>

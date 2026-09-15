@@ -6,17 +6,15 @@
     <string name="title_suggest">Assistente CAA</string>
     <string name="title_favorites">Preferiti</string>
     <string name="title_contexts">Contesti</string>
+    <string name="title_prompts">Prompt AI</string>
     <string name="action_logout">Esci</string>
 
     <string name="model_loading_title">Caricamento del modello</string>
     <string name="model_loading_subtitle">Attendere prego</string>
     <string name="model_copying">Copia del modello in corso…</string>
     <string name="model_initializing">Inizializzazione del modello…</string>
-    <string name="model_downloading">Download: %1$d%%</string>
 
     <string name="error_title">Qualcosa è andato storto</string>
-    <string name="error_model_not_found">Modello non trovato sul dispositivo</string>
-    <string name="error_unknown">Errore sconosciuto</string>
     <string name="error_generation">Errore durante la generazione</string>
 
     <string name="chat_input_hint">Scrivi una frase all\'infinito…</string>
@@ -27,23 +25,10 @@
     <string name="chat_status_generating">Generazione in corso…</string>
     <string name="chat_app_icon">Icona dell\'app</string>
 
-    <string name="favorites_empty_title">Nessun preferito</string>
-    <string name="favorites_empty_hint">Tieni premuto su una risposta dell\'assistente per salvarla qui</string>
-    <string name="favorites_add">Aggiungi un preferito</string>
-    <string name="favorite_new">Nuovo preferito</string>
-    <string name="favorite_edit">Modifica preferito</string>
-    <string name="favorite_hint">Frase da salvare</string>
     <string name="favorite_added">Aggiunto ai preferiti</string>
     <string name="favorite_removed">Rimosso dai preferiti</string>
     <string name="favorite_deleted">Preferito eliminato</string>
 
-    <string name="contexts_empty_title">Nessun contesto</string>
-    <string name="contexts_empty_hint">Aggiungi un contesto per ottenere suggerimenti più adatti alla situazione</string>
-    <string name="contexts_add">Aggiungi un contesto</string>
-    <string name="context_new">Nuovo contesto</string>
-    <string name="context_edit">Modifica contesto</string>
-    <string name="context_label_hint">Nome del contesto (es. A tavola)</string>
-    <string name="context_prompt_hint">Descrizione per l\'assistente</string>
     <string name="context_deleted">Contesto eliminato</string>
 
     <string name="action_save">Salva</string>
@@ -71,7 +56,6 @@
     <string name="error_delete_favorite">Impossibile eliminare</string>
     <string name="favorites_empty">Nessun preferito. Premi la stella su una frase per salvarla.</string>
 
-    <string name="favorite_used">Frase selezionata</string>
     <string name="action_toggle_favorite">Aggiungi ai preferiti</string>
 
     <plurals name="favorite_usage_count">
@@ -132,4 +116,20 @@
     <string name="error_email_already_in_use">Questo indirizzo email è già associato a un altro account</string>
     <string name="error_recent_login_required">Per motivi di sicurezza, devi uscire e rientrare per cambiare email o password</string>
     <string name="error_provider_password_unsupported">Questo account usa l\'accesso Google: la password non può essere cambiata qui</string>
+
+    <string name="prompts_system_title">Istruzioni di sistema</string>
+    <string name="prompts_system_hint">Definisce il comportamento generale del modello.</string>
+    <string name="prompts_incoming_title">Richiesta con messaggio ricevuto</string>
+    <string name="prompts_incoming_hint">Usa {messaggio} come segnaposto per il testo ricevuto.</string>
+    <string name="prompts_generic_title">Richiesta generica</string>
+    <string name="prompts_reset">Ripristina predefiniti</string>
+    <string name="prompts_reset_confirm_message">I prompt personalizzati verranno sostituiti con quelli originali.</string>
+    <string name="prompts_saved">Prompt salvati</string>
+    <string name="prompts_save_error">Errore nel salvataggio dei prompt</string>
+
+    <string name="model_switch_title">Seleziona modello</string>
+    <string name="action_switch_model">Cambia modello</string>
+    <string name="model_switch_unavailable_message">Solo un modello disponibile: %1$s</string>
+    <string name="model_switch_none">nessuno</string>
+    <string name="model_switch_current">%1$s ✓</string>
 </resources>

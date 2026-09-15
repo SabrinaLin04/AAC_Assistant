@@ -40,9 +40,8 @@ class FavoritesAdapter (
         if (favorite.pictogramIds.isNotEmpty()) {
             holder.binding.pictogramScroll.visibility = View.VISIBLE
 
-            val density = context.resources.displayMetrics.density
-            val sizePx = (48 * density).toInt()
-            val marginPx = (8 * density).toInt()
+            val sizePx = context.resources.getDimensionPixelSize(R.dimen.pictogram_favorite_size)
+            val marginPx = context.resources.getDimensionPixelSize(R.dimen.pictogram_favorite_gap)
 
             favorite.pictogramIds.forEach { pictogramId ->
                 val imageView = ImageView(context).apply {

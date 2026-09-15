@@ -1,24 +1,29 @@
 package it.lbsl.aacassistant
 
 import android.content.Context
+import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
-import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import androidx.annotation.StringRes
-import kotlinx.coroutines.delay
+import java.time.Instant
 import kotlin.random.Random
 
 sealed interface ModelState {
@@ -43,9 +48,56 @@ data class ChatMessage(
     val id: Long = System.nanoTime()
 )
 
+private const val TAG = "LlmViewModel"
+
+//articoli, preposizioni e pronomi: non hanno un pittogramma corrispondente in ARASAAC
+//e cercarli significherebbe solo sprecare chiamate di rete
+private val STOPWORDS = setOf(
+    "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
+    "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
+    "del", "dello", "della", "dei", "degli", "delle",
+    "al", "allo", "alla", "ai", "agli", "alle",
+    "dal", "dallo", "dalla", "dai", "dagli", "dalle",
+    "nel", "nello", "nella", "nei", "negli", "nelle",
+    "sul", "sullo", "sulla", "sui", "sugli", "sulle",
+    "e", "ed", "o", "od", "ma", "che", "se",
+    "mi", "ti", "ci", "vi", "si", "ne", "ce", "ve", "me", "te",
+    "qui", "qua", "li"
+)
+
+//frasi usate quando nessun modello è presente sul dispositivo, scelte in base al contesto attivo
+private val DEMO_SUGGESTIONS = mapOf(
+    "pasto" to listOf(
+        "Ho fame.", "Vorrei ancora un po', per favore.",
+        "Ho finito, grazie.", "Posso avere dell'acqua?"
+    ),
+    "medico" to listOf(
+        "Mi fa male qui.", "Il dolore è forte.",
+        "Non capisco, può ripetere?", "Vorrei che mia madre restasse con me."
+    ),
+    "scuola" to listOf(
+        "Non ho capito l'esercizio.", "Posso andare in bagno?",
+        "Ho bisogno di aiuto.", "Ho finito il compito."
+    ),
+    "casa" to listOf(
+        "Vorrei riposare.", "Ho voglia di uscire.",
+        "Posso guardare la televisione?", "Mi sento stanco."
+    )
+)
+
+private val DEMO_FALLBACK = listOf(
+    "Ho bisogno di aiuto.", "Sì, grazie.",
+    "No, preferisco di no.", "Vorrei riposare un momento."
+)
+
+private val DEMO_REPLIES = listOf("Sì.", "No.", "Non lo so.", "Non ho capito.")
+
+//il modello incornicia spesso le frasi con virgolette tipografiche o caporali
+private val TRIM_CHARS = charArrayOf(
+    '"', '“', '”', '«', '»', '\'', '’', '.'
+)
 
 class LlmViewModel : ViewModel() {
-
 
     private val _modelState = MutableLiveData<ModelState>(ModelState.Idle)
     val modelState: LiveData<ModelState> = _modelState
@@ -55,79 +107,62 @@ class LlmViewModel : ViewModel() {
     private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
     val messages: LiveData<List<ChatMessage>> = _messages
 
-    private val demoSuggestions = mapOf(
-        "pasto" to listOf(
-            "Ho fame.", "Vorrei ancora un po', per favore.",
-            "Ho finito, grazie.", "Posso avere dell'acqua?"
-        ),
-        "medico" to listOf(
-            "Mi fa male qui.", "Il dolore è forte.",
-            "Non capisco, può ripetere?", "Vorrei che mia madre restasse con me."
-        ),
-        "scuola" to listOf(
-            "Non ho capito l'esercizio.", "Posso andare in bagno?",
-            "Ho bisogno di aiuto.", "Ho finito il compito."
-        ),
-        "casa" to listOf(
-            "Vorrei riposare.", "Ho voglia di uscire.",
-            "Posso guardare la televisione?", "Mi sento stanco."
-        )
-    )
-
-    private val demoFallback = listOf(
-        "Ho bisogno di aiuto.", "Sì, grazie.",
-        "No, preferisco di no.", "Vorrei riposare un momento."
-    )
-
     private var engine: Engine? = null
     private var conversation: Conversation? = null
 
     private var contextDescription: String? = null
-
     private var contextName: String? = null
-
     private var lastIncoming: String? = null
 
-
     private var metricsLogger: MetricsLogger? = null
-
     private var appContext: Context? = null
-
     private var engineProvider: LlmEngineProvider? = null
+    private var promptConfig = PromptConfig()
+    private var promptsRegistration: ListenerRegistration? = null
 
     //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
-    fun getModel(context: Context) {
-        metricsLogger = MetricsLogger(context.filesDir)
-        engineProvider= LlmEngineProvider(context.filesDir)
+    fun loadModel(context: Context) {
         val appCtx = context.applicationContext
         appContext = appCtx
+        metricsLogger = MetricsLogger(appCtx.filesDir)
+
+        val provider = LlmEngineProvider(appCtx.filesDir)
+        engineProvider = provider
+
+        //rimuovo il listener precedente prima di riagganciarne uno nuovo
+        promptsRegistration?.remove()
+        promptsRegistration = FirestoreRepository().observePrompts { config ->
+            promptConfig = config
+            // il system prompt si applica alla creazione della conversazione,
+            // quindi va ricreata perché la modifica abbia effetto
+            if (engine != null) createConversation()
+        }
+
         viewModelScope.launch {
             PictogramRepository.loadCoreIndex(appCtx)
             PictogramRepository.loadLemmatizer(appCtx)
 
-            val provider = engineProvider!!
-            val available = provider.discoverModels()
-
-            if (available.isEmpty()) {
+            val model = provider.discoverModels().firstOrNull()
+            if (model == null) {
+                Log.i(TAG, "nessun modello sul dispositivo, avvio in modalità demo")
                 _modelState.value = ModelState.DemoMode
                 return@launch
             }
 
-            val model=available.first()
-
             try {
                 _modelState.value = ModelState.Initializing(R.string.model_copying)
-                val modelPath = withContext(Dispatchers.IO) {
-                    provider.prepareModel(model)
-                }
+                val modelPath = withContext(Dispatchers.IO) { provider.prepareModel(model) }
 
                 if (modelPath == null) {
+                    Log.w(TAG, "copia di ${model.filename} non riuscita, avvio in modalità demo")
                     _modelState.value = ModelState.DemoMode
                     return@launch
                 }
 
-                loadEngine(modelPath, context, model)
+                loadEngine(modelPath, appCtx, model)
             } catch (e: Exception) {
+                //un fallimento del motore è altrimenti indistinguibile dall'assenza del modello
+                Log.e(TAG, "inizializzazione di ${model.label} fallita", e)
                 _modelState.value = ModelState.DemoMode
             }
         }
@@ -135,10 +170,7 @@ class LlmViewModel : ViewModel() {
 
     //costruisce le istruzioni di sistema per il modello integrando la descrizione del contesto attuale se disponibile
     private fun buildSystemPrompt(): String {
-        val base = "Sei un assistente per la comunicazione aumentativa e alternativa. " +
-                "Suggerisci frasi che una persona potrebbe voler dire, in prima persona. " +
-                "Ogni frase: 3-10 parole, italiano semplice, una per riga. " +
-                "Nessuna numerazione, nessuna virgoletta, nessun commento."
+        val base = promptConfig.systemPrompt
 
         return contextDescription
             ?.takeIf { it.isNotBlank() }
@@ -148,11 +180,11 @@ class LlmViewModel : ViewModel() {
 
     //seleziona un set di frasi preimpostate per la modalità demo in base alla parola chiave del contesto attivo
     private fun pickDemoSuggestions(): List<String> {
-        val ctx = contextDescription?.lowercase() ?: return demoFallback
-        return demoSuggestions.entries
+        val ctx = contextDescription?.lowercase() ?: return DEMO_FALLBACK
+        return DEMO_SUGGESTIONS.entries
             .firstOrNull { (key, _) -> ctx.contains(key) }
             ?.value
-            ?: demoFallback
+            ?: DEMO_FALLBACK
     }
 
     //chiude l'eventuale conversazione precedente e ne avvia una nuova configurando il prompt di sistema e i parametri di campionamento
@@ -193,62 +225,41 @@ class LlmViewModel : ViewModel() {
         _modelState.value = ModelState.Ready
     }
 
-    private val stopwords = setOf(
-        "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
-        "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
-        "del", "dello", "della", "dei", "degli", "delle",
-        "al", "allo", "alla", "ai", "agli", "alle",
-        "dal", "dallo", "dalla", "dai", "dagli", "dalle",
-        "nel", "nello", "nella", "nei", "negli", "nelle",
-        "sul", "sullo", "sulla", "sui", "sugli", "sulle",
-        "e", "ed", "o", "od", "ma", "che", "se",
-        "mi", "ti", "ci", "vi", "si", "ne", "ce", "ve", "me", "te",
-        "qui", "qua", "li", "la"
-    )
-
     //analizza la frase filtrando le stopword per trovare e restituire fino a dieci identificatori di pittogrammi univoci corrispondenti
-    private suspend fun findPictogramsFor(sentence: String): List<Int> {
+    //le parole assenti dall'indice locale richiedono una chiamata di rete, quindi si risolvono in parallelo
+    private suspend fun findPictogramsFor(sentence: String): List<Int> = coroutineScope {
         val words = sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
-            .filter { it.length >= 2 && it !in stopwords }
+            .filter { it.length >= 2 && it !in STOPWORDS }
             .take(20)
 
-        val ids = mutableListOf<Int>()
         val ctx = appContext
 
-        for (word in words) {
-            val id = if (ctx != null) {
-                PictogramRepository.findPictogram(ctx, word)
-            } else {
-                PictogramRepository.findPictogram(word)
+        words
+            .map { word ->
+                async {
+                    if (ctx != null) {
+                        PictogramRepository.findPictogram(ctx, word)
+                    } else {
+                        PictogramRepository.findPictogram(word)
+                    }
+                }
             }
-
-            if (id != null && id !in ids) { //evita duplicati perche' due parole diverse possono corrispondere allo stesso pittogramma
-                ids.add(id)
-            }
-            if (ids.size >= 10) break
-        }
-
-        return ids
-    }
-
-    //cerca i pittogrammi per la frase passata e li associa all'ultimo messaggio presente nella cronologia della chat
-    private suspend fun resolvePictogram(sentence: String) {
-        val ids = findPictogramsFor(sentence)
-        if (ids.isEmpty()) return
-
-        val list = _messages.value.orEmpty().toMutableList()
-        if (list.isEmpty()) return
-        list[list.lastIndex] = list.last().copy(pictogramIds = ids)
-        _messages.value = list
+            .awaitAll() //l'ordine delle parole nella frase va conservato
+            .filterNotNull()
+            .distinct() //due parole diverse possono corrispondere allo stesso pittogramma
+            .take(10)
     }
 
     //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
     fun setContext(name: String?, description: String?) {
+        //il nome serve solo alle metriche, si aggiorna anche a descrizione invariata
+        contextName = name
+
+        //solo un cambio di descrizione tocca il system prompt e giustifica il reset
         if (description == contextDescription) return
 
-        contextName = name
         contextDescription = description
         lastIncoming = null
 
@@ -284,59 +295,10 @@ class LlmViewModel : ViewModel() {
                 return@launch
             }
 
-            val prompt = lastIncoming?.let {
-                //se qualcuno ha scritto qualcosa il primo suggerisci da frasi inerenti
-                "Qualcuno mi ha detto: \"$it\". Suggerisci 5 frasi che potrei rispondere."
-            } ?: listOf(
-                "Suggerisci 5 frasi.",
-                "Proponi 5 frasi utili adesso.",
-                "Scrivi 5 frasi possibili.",
-                "Genera 5 frasi per questo momento."
-            ).random()
+            val generation = streamResponse(conv, buildSuggestionPrompt())
+            logMetrics(generation)
 
-            val accumulated = StringBuilder()
-
-            val startTime = System.nanoTime()
-            var firstTokenTime: Long? = null
-            var tokenCount = 0
-
-            conv.sendMessageAsync(prompt)
-                .catch { error ->
-                    _chatState.value = ChatState.Error(
-                        messageRes = R.string.error_generation,
-                        detail = error.localizedMessage
-                    )
-                }
-                .collect { chunk ->
-                    if (firstTokenTime == null) {
-                        firstTokenTime = System.nanoTime()
-                    }
-                    tokenCount++
-                    accumulated.append(chunk.toString()) }
-
-            val endTime = System.nanoTime()
-            val totalMs = (endTime - startTime) / 1_000_000
-            val ttftMs = ((firstTokenTime ?: endTime) - startTime) / 1_000_000
-
-            withContext(Dispatchers.IO) {metricsLogger?.log(MetricsEntry(
-                timestamp = java.time.Instant.now().toString(),
-                ttftMs = ttftMs,
-                totalMs = totalMs,
-                nChars = accumulated.length,
-                nChunks = tokenCount,
-                charPerSec = if (totalMs > 0) tokenCount * 1000.0 / totalMs else 0.0,
-                backend = when (engineProvider?.selected?.backend) {
-                    is Backend.GPU -> "GPU"
-                    is Backend.CPU -> "CPU"
-                    else -> "unknown"
-                },
-                model = engineProvider?.selected?.label ?: "none",
-                contextId = contextName  ?: "none"
-            ))
-            }
-
-
-            publishSuggestions(splitSuggestions(accumulated.toString()))
+            publishSuggestions(splitSuggestions(generation.text))
 
             lastIncoming = null
 
@@ -346,20 +308,82 @@ class LlmViewModel : ViewModel() {
         }
     }
 
+    //se c'è un messaggio ricevuto si chiede una risposta, altrimenti frasi libere sul contesto
+    private fun buildSuggestionPrompt(): String =
+        lastIncoming?.let { promptConfig.promptWithIncoming.replace("{messaggio}", it) }
+            ?: promptConfig.promptGeneric
+
+    //esito di una generazione, con i tempi che servono alle misure della tesi
+    private data class Generation(
+        val text: String,
+        val ttftMs: Long,
+        val totalMs: Long,
+        val chunks: Int
+    )
+
+    //accumula i chunk dello stream misurando il tempo al primo token e quello totale
+    private suspend fun streamResponse(conv: Conversation, prompt: String): Generation {
+        val accumulated = StringBuilder()
+        val startTime = System.nanoTime()
+        var firstTokenTime: Long? = null
+        var chunks = 0
+
+        conv.sendMessageAsync(prompt)
+            .catch { error ->
+                _chatState.value = ChatState.Error(
+                    messageRes = R.string.error_generation,
+                    detail = error.localizedMessage
+                )
+            }
+            .collect { chunk ->
+                if (firstTokenTime == null) firstTokenTime = System.nanoTime()
+                chunks++
+                accumulated.append(chunk.toString())
+            }
+
+        val endTime = System.nanoTime()
+        return Generation(
+            text = accumulated.toString(),
+            ttftMs = ((firstTokenTime ?: endTime) - startTime) / 1_000_000,
+            totalMs = (endTime - startTime) / 1_000_000,
+            chunks = chunks
+        )
+    }
+
+    private suspend fun logMetrics(generation: Generation) {
+        val logger = metricsLogger ?: return
+        val model = engineProvider?.selected
+
+        val entry = MetricsEntry(
+            timestamp = Instant.now().toString(),
+            ttftMs = generation.ttftMs,
+            totalMs = generation.totalMs,
+            nChars = generation.text.length,
+            nChunks = generation.chunks,
+            charPerSec = if (generation.totalMs > 0) {
+                generation.chunks * 1000.0 / generation.totalMs
+            } else {
+                0.0
+            },
+            backend = when (model?.backend) {
+                is Backend.GPU -> "GPU"
+                is Backend.CPU -> "CPU"
+                else -> "unknown"
+            },
+            model = model?.label ?: "none",
+            contextId = contextName ?: "none"
+        )
+
+        withContext(Dispatchers.IO) { logger.log(entry) }
+    }
+
     //simula la richiesta di suggerimenti pubblicando le opzioni preimpostate della modalità demo
     private fun requestDemoSuggestions() {
         viewModelScope.launch {
             _chatState.value = ChatState.Generating
             delay(600)
 
-            val suggestions = if (lastIncoming != null) {
-                listOf(
-                    "Sì.", "No.",
-                    "Non lo so.", "Non ho capito."
-                )
-            } else {
-                pickDemoSuggestions()
-            }
+            val suggestions = if (lastIncoming != null) DEMO_REPLIES else pickDemoSuggestions()
 
             publishSuggestions(suggestions)
             lastIncoming = null
@@ -367,21 +391,28 @@ class LlmViewModel : ViewModel() {
         }
     }
 
-    //pulisce l'output testuale grezzo del modello pulendo le frasi
+    //ripulisce l'output grezzo del modello da elenchi puntati, numerazione e virgolette
     private fun splitSuggestions(raw: String): List<String> =
         raw.lines()
-            .map { it.trim().removePrefix("-").removePrefix("*").trim() }
-            .map { it.replace(Regex("^\\d+[.)]\\s*"), "") }
-            .map { it.trim('"', '"', '"', '\'', '.') }
+            .map { line ->
+                line.trim()
+                    .removePrefix("-")
+                    .removePrefix("*")
+                    .trim()
+                    .replace(Regex("^\\d+[.)]\\s*"), "")
+                    .trim(*TRIM_CHARS)
+            }
             .filterNot { it.contains("[") || it.contains("/") || it.contains(":") }
             .filter { it.length in 3..80 }
             .take(4)
-    private suspend fun publishSuggestions(suggestions: List<String>) {
-        if (suggestions.isEmpty()) return
 
-        val newMessages = suggestions.map { text ->
-            ChatMessage("model", text, findPictogramsFor(text))
-        }
+    private suspend fun publishSuggestions(suggestions: List<String>) = coroutineScope {
+        if (suggestions.isEmpty()) return@coroutineScope
+
+        //ogni frase cerca i propri pittogrammi, le quattro ricerche procedono insieme
+        val newMessages = suggestions
+            .map { text -> async { ChatMessage("model", text, findPictogramsFor(text)) } }
+            .awaitAll()
 
         //se c'è una frase la mantiene
         _messages.value = if (lastIncoming != null) {
@@ -428,11 +459,11 @@ class LlmViewModel : ViewModel() {
     }
 
     // esponi la lista dei modelli disponibili per la UI
-    fun getAvailableModels(): List<ModelInfo> =
-        engineProvider?.discoverModels() ?: emptyList()
+    val availableModels: List<ModelInfo>
+        get() = engineProvider?.discoverModels() ?: emptyList()
 
-    fun getCurrentModel(): ModelInfo? =
-        engineProvider?.selected
+    val currentModel: ModelInfo?
+        get() = engineProvider?.selected
 
     fun clearChatError() {
         if (_chatState.value is ChatState.Error) {
@@ -442,6 +473,7 @@ class LlmViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
+        promptsRegistration?.remove()
         conversation?.close()
         engine?.close()
         conversation = null

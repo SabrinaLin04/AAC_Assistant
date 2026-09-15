@@ -21,7 +21,7 @@
                 android:layout_height="wrap_content"
                 android:minHeight="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
-                app:titleTextColor="@android:color/white"
+                app:titleTextColor="?attr/colorOnPrimary"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
@@ -52,6 +52,7 @@
                 android:id="@+id/drawerRoot"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="?attr/colorSurface"
                 android:orientation="vertical">
 
                 <androidx.core.widget.NestedScrollView
@@ -72,6 +73,7 @@
                             android:id="@+id/drawerMenuView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:background="@android:color/transparent"
                             app:menu="@menu/drawer_menu" />
 
                     </LinearLayout>

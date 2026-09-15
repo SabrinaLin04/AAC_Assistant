@@ -24,9 +24,7 @@ class ContextsViewModel : ViewModel() {
     private val _activeContextId = MutableLiveData<String?>(null)
     val activeContextId: LiveData<String?> = _activeContextId
 
-    val isEmpty: LiveData<Boolean> = _contexts.map { it.isEmpty() }
-
-    //vero  quando la lista e' vuota e il caricamento e' finito
+    //vero quando la lista è vuota e il caricamento è finito
     val showEmptyState: LiveData<Boolean> = MediatorLiveData<Boolean>().apply {
         fun update() {
             value = (_contexts.value?.isEmpty() == true) && (_isLoading.value != true)

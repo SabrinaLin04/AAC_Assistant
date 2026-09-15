@@ -34,4 +34,10 @@
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
 
+    <fragment
+        android:id="@+id/promptsFragment"
+        android:name="it.lbsl.aacassistant.PromptsFragment"
+        android:label="@string/title_prompts"
+        tools:layout="@layout/fragment_prompts" />
+
 </navigation>

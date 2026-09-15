@@ -11,8 +11,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.navigation.NavController
 import androidx.activity.addCallback
 import androidx.core.view.GravityCompat
-import android.widget.LinearLayout
-import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -20,7 +18,6 @@ import androidx.navigation.ui.setupWithNavController
 import it.lbsl.aacassistant.databinding.ActivityMainBinding
 import androidx.navigation.ui.navigateUp
 import com.firebase.ui.auth.AuthUI
-import androidx.appcompat.app.AlertDialog
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -90,8 +87,6 @@ class MainActivity : AppCompatActivity() {
 
         appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
 
-        // binding.drawerMenuView.setupWithNavController(navController)
-
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
         binding.drawerMenuView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
@@ -117,24 +112,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun showModelSwitchDialog() {
         val llmViewModel = androidx.lifecycle.ViewModelProvider(this)[LlmViewModel::class.java]
-        val models = llmViewModel.getAvailableModels()
+        val models = llmViewModel.availableModels
 
         if (models.size < 2) {
             MaterialAlertDialogBuilder(this)
-                .setTitle("Cambia modello")
-                .setMessage("Solo un modello disponibile: ${models.firstOrNull()?.label ?: "nessuno"}")
-                .setPositiveButton("OK", null)
+                .setTitle(R.string.action_switch_model)
+                .setMessage(
+                    getString(
+                        R.string.model_switch_unavailable_message,
+                        models.firstOrNull()?.label ?: getString(R.string.model_switch_none)
+                    )
+                )
+                .setPositiveButton(android.R.string.ok, null)
                 .show()
             return
         }
 
-        val current = llmViewModel.getCurrentModel()
+        val current = llmViewModel.currentModel
         val names = models.map {
-            if (it == current) "${it.label} ✓" else it.label
+            if (it == current) getString(R.string.model_switch_current, it.label) else it.label
         }.toTypedArray()
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Seleziona modello")
+            .setTitle(R.string.model_switch_title)
             .setItems(names) { _, which ->
                 val chosen = models[which]
                 if (chosen != current) {
@@ -169,9 +169,6 @@ class MainActivity : AppCompatActivity() {
             onConfirm = { logout() }
         )
     }
-
-    private fun dpToPx(dp: Int): Int =
-        (dp * resources.displayMetrics.density).toInt()
 
     //esegue la disconnessione dell'utente tramite firebase auth e lo reindirizza alla schermata di benvenuto ripulendo lo stack di navigazione
     private fun logout() {

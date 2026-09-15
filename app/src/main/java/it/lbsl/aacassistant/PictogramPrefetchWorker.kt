@@ -16,8 +16,8 @@ class PictogramPrefetchWorker(context: Context, params: WorkerParameters)
         val ids = PictogramRepository.coreIds(applicationContext)
         if (ids.isEmpty()) return@withContext Result.success()
 
-        val dir= PictogramRepository.pictogramDir(applicationContext)
-        var failures= 0
+        val dir = PictogramRepository.pictogramDir(applicationContext)
+        var failures = 0
 
         //scorre gli id ed esegue il download dell'immagine in un file temporaneo, per poi rinominarlo solo a download completato evitando file corrotti
         ids.forEach { id ->

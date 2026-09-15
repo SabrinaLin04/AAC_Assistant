@@ -1,11 +1,11 @@
 package it.lbsl.aacassistant
 
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
@@ -19,9 +19,7 @@ class FavoritesViewModel : ViewModel() {
     private val _errorMessage = MutableLiveData<Int?>(null)
     val errorMessage: LiveData<Int?> = _errorMessage
 
-    val isEmpty: LiveData<Boolean> = _favorites.map { it.isEmpty() }
-
-    //vero quando la lista e' vuota e il caricamento e' finito
+    //vero quando la lista è vuota e il caricamento è finito
     val showEmptyState: LiveData<Boolean> = MediatorLiveData<Boolean>().apply {
         fun update() {
             value = (_favorites.value?.isEmpty() == true) && (_isLoading.value != true)
@@ -63,6 +61,18 @@ class FavoritesViewModel : ViewModel() {
         }
     }
 
+    //ricrea un preferito appena eliminato, per l'annulla dello swipe
+    fun restoreFavorite(text: String, pictogramIds: List<Int> = emptyList()) {
+        viewModelScope.launch {
+            try {
+                repository.addFavorite(text, pictogramIds)
+                loadFavorites()
+            } catch (e: Exception) {
+                _errorMessage.value = R.string.error_toggle_favorite
+            }
+        }
+    }
+
     fun deleteFavorite(favoriteId: String) {
         viewModelScope.launch {
             try {
@@ -80,6 +90,8 @@ class FavoritesViewModel : ViewModel() {
                 repository.incrementFavoriteUsage(favoriteId)
                 loadFavorites()
             } catch (e: Exception) {
+                //il conteggio d'uso non è critico, si registra senza avvisare l'utente
+                Log.w("FavoritesViewModel", "incrementFavoriteUsage fallita", e)
             }
         }
     }

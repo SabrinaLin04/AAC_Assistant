@@ -17,7 +17,7 @@ class Lemmatizer private constructor(
     //numero di coppie forma-lemma caricate
     val size: Int get() = forms.size
 
-    //restituisce la forma base della parola se non e' presente una voce per essa
+    //restituisce la forma base della parola se non è presente una voce per essa
     fun lemmatize(word: String): String {
         val normalized = normalize(word)
         if (normalized.isEmpty()) return ""
