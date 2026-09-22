@@ -44,9 +44,11 @@ sealed interface ChatState {
 data class ChatMessage(
     val author: String,
     val text: String,
-    val pictogramIds: List<Int> = emptyList(),
+    val pictograms: List<WordPictogram> = emptyList(),
     val id: Long = System.nanoTime()
-)
+) {
+    val pictogramIds: List<Int> get() = pictograms.map { it.pictogramId }
+}
 
 //autori dei messaggi in chat: cosa vuole dire l'utente, cosa gli hanno detto, cosa suggerisce il modello
 const val AUTHOR_USER = "user"
@@ -238,7 +240,7 @@ class LlmViewModel : ViewModel() {
 
     //analizza la frase filtrando le stopword per trovare e restituire fino a dieci identificatori di pittogrammi univoci corrispondenti
     //le parole assenti dall'indice locale richiedono una chiamata di rete, quindi si risolvono in parallelo
-    private suspend fun findPictogramsFor(sentence: String): List<Int> = coroutineScope {
+    private suspend fun findPictogramsFor(sentence: String): List<WordPictogram> = coroutineScope {
         val words = sentence
             .lowercase()
             .split(Regex("[^\\p{L}]+"))
@@ -250,21 +252,22 @@ class LlmViewModel : ViewModel() {
         words
             .map { word ->
                 async {
-                    if (ctx != null) {
+                    val id = if (ctx != null) {
                         PictogramRepository.findPictogram(ctx, word)
                     } else {
                         PictogramRepository.findPictogram(word)
                     }
+                    id?.let { WordPictogram(word, it) }
                 }
             }
             .awaitAll() //l'ordine delle parole nella frase va conservato
             .filterNotNull()
-            .distinct() //due parole diverse possono corrispondere allo stesso pittogramma
+            .distinctBy { it.pictogramId } //due parole diverse possono corrispondere allo stesso pittogramma
             .take(10)
     }
 
     //stessa ricerca usata per i messaggi, per le frasi pronte che nascono già scritte
-    suspend fun pictogramsFor(text: String): List<Int> = findPictogramsFor(text)
+    suspend fun pictogramsFor(text: String): List<WordPictogram> = findPictogramsFor(text)
 
     //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
     fun setContext(name: String?, description: String?) {
@@ -292,8 +295,8 @@ class LlmViewModel : ViewModel() {
         viewModelScope.launch {
             pendingInput = PendingInput(text, kind)
             val author = if (kind == InputKind.REPLY) AUTHOR_PARTNER else AUTHOR_USER
-            val ids = findPictogramsFor(text)
-            _messages.value = _messages.value.orEmpty() + ChatMessage(author, text, ids)
+            val pictograms = findPictogramsFor(text)
+            _messages.value = _messages.value.orEmpty() + ChatMessage(author, text, pictograms)
             generateSuggestions()
         }
     }

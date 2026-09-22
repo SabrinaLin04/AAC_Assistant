@@ -29,7 +29,7 @@ class ContextsFragment : Fragment() {
     private val hintsViewModel: HintsViewModel by activityViewModels()
     private lateinit var adapter: ContextsAdapter
 
-    private val quickPictograms = mutableMapOf<String, List<Int>>()
+    private val quickPictograms = mutableMapOf<String, List<WordPictogram>>()
 
     override fun onCreateView(
         inflater: LayoutInflater,

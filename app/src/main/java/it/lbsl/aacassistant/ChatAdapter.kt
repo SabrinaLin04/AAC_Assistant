@@ -18,7 +18,7 @@ import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 
 class ChatAdapter (
     private val isFavorite: (String) -> Boolean = { false },
-    private val onToggleFavorite: (String, List<Int>) -> Unit = { _, _ -> },
+    private val onToggleFavorite: (ChatMessage) -> Unit = { },
     private val onPictogramsClick: (ChatMessage) -> Unit = { },
     private val onSpeak: (ChatMessage) -> Unit = { }
 ) : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(ChatMessageDiffCallback()) {
@@ -177,7 +177,7 @@ class ChatAdapter (
             )
             save.strokeWidth = if (saved) 0 else holder.saveStrokeWidth
 
-            save.setOnClickListener { onToggleFavorite(message.text, message.pictogramIds) }
+            save.setOnClickListener { onToggleFavorite(message) }
         }
     }
 

@@ -54,10 +54,15 @@ class FirestoreRepository {
     }
     suspend fun addFavorite(
         text: String,
-        pictogramIds: List<Int> = emptyList(),
+        pictograms: List<WordPictogram> = emptyList(),
         contextId: String? = null
     ) : String {
-        val favorite = Favorite(text = text, pictogramIds = pictogramIds, contextId = contextId)
+        val favorite = Favorite(
+            text = text,
+            pictogramIds = pictograms.map { it.pictogramId },
+            pictogramWords = pictograms.map { it.word },
+            contextId = contextId
+        )
         return favorites().add(favorite).await().id
     }
 

@@ -2,6 +2,12 @@ package it.lbsl.aacassistant
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ReplacementSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.HorizontalScrollView
@@ -91,39 +97,123 @@ fun Context.showConfirmationDialog(
     dialog.show()
 }
 
-//mostra il testo ingrandito con i suoi pittogrammi, la vista che si gira verso l'interlocutore
+//sfondo arrotondato dietro la parola in lettura: sborda sugli spazi accanto invece di
+//allargare la parola, così le altre non si spostano mentre la lettura avanza
+private class PillSpan(private val background: Int, private val textColor: Int) : ReplacementSpan() {
+
+    override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?) =
+        paint.measureText(text, start, end).toInt()
+
+    override fun draw(
+        canvas: Canvas, text: CharSequence, start: Int, end: Int,
+        x: Float, top: Int, y: Int, bottom: Int, paint: Paint
+    ) {
+        val padding = paint.textSize / 4f
+        val pill = RectF(x - padding, top.toFloat(), x + getSize(paint, text, start, end, null) + padding, bottom.toFloat())
+        val original = paint.color
+
+        paint.color = background
+        canvas.drawRoundRect(pill, pill.height() / 2f, pill.height() / 2f, paint)
+        paint.color = textColor
+        canvas.drawText(text, start, end, x, y.toFloat(), paint)
+        paint.color = original
+    }
+}
+
+//finestra della frase, la vista che si gira verso l'interlocutore.
+//Resta in mano a chi la apre per poter evidenziare la parola mentre viene letta
+class SpeakDialog internal constructor(
+    private val dialog: AlertDialog,
+    private val speakText: TextView,
+    private val scroll: HorizontalScrollView,
+    private val text: String,
+    private val shown: List<Pair<WordPictogram, ImageView>>,
+    private val highlightColor: Int,
+    private val onHighlightColor: Int
+) {
+
+    //evidenzia la parola in lettura e il suo pittogramma. Le parole senza pittogramma, come
+    //articoli e preposizioni, lasciano acceso quello di prima invece di spegnere tutto
+    fun highlight(range: IntRange?) {
+        if (range == null) {
+            clear()
+            return
+        }
+        if (range.first < 0 || range.last >= text.length) return
+
+        //il motore vocale pronuncia "d'acqua" come una parola sola, mentre il pittogramma
+        //è associato ad "acqua": si confrontano le parole contenute, non l'intero intervallo
+        val spoken = text.substring(range.first, range.last + 1).lowercase()
+        val words = spoken.split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }
+        val match = shown.firstOrNull { (pictogram, _) -> pictogram.word in words } ?: return
+
+        speakText.text = SpannableString(text).apply {
+            setSpan(
+                PillSpan(highlightColor, onHighlightColor),
+                range.first,
+                range.last + 1,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        shown.forEach { (_, image) -> image.setBackgroundResource(0) }
+        match.second.setBackgroundResource(R.drawable.bg_pictogram_highlight)
+        //con molti pittogrammi quello in lettura potrebbe essere fuori dallo schermo
+        scroll.smoothScrollTo(match.second.left, 0)
+    }
+
+    //a fine lettura la frase torna com'era
+    private fun clear() {
+        speakText.text = text
+        shown.forEach { (_, image) -> image.setBackgroundResource(0) }
+    }
+
+    fun onDismiss(action: () -> Unit) {
+        dialog.setOnDismissListener { action() }
+    }
+}
+
+//mostra il testo ingrandito con i suoi pittogrammi.
 //onRepeat aggiunge il pulsante "Ripeti", che fa ridire la frase senza chiudere il dialog
 fun Context.showSpeakDialog(
     text: String,
-    pictogramIds: List<Int>,
-    onRepeat: (() -> Unit)? = null
-) {
+    pictograms: List<WordPictogram>,
+    onRepeat: (() -> Unit)? = null,
+    onShare: (() -> Unit)? = null
+): SpeakDialog {
     val view = LayoutInflater.from(this).inflate(R.layout.dialog_speak, null)
 
-    view.findViewById<TextView>(R.id.speakText).text = text
+    val speakText = view.findViewById<TextView>(R.id.speakText)
+    speakText.text = text
+
+    val share = view.findViewById<MaterialButton>(R.id.shareButton)
+    share.visibility = if (onShare == null) View.GONE else View.VISIBLE
+    share.setOnClickListener { onShare?.invoke() }
 
     val row = view.findViewById<LinearLayout>(R.id.pictogramRow)
     val scroll = view.findViewById<HorizontalScrollView>(R.id.pictogramScroll)
 
     row.removeAllViews()
+    val shown = mutableListOf<Pair<WordPictogram, ImageView>>()
 
-    if (pictogramIds.isEmpty()) {
+    if (pictograms.isEmpty()) {
         scroll.visibility = View.GONE
     } else {
         scroll.visibility = View.VISIBLE
         val size = resources.getDimensionPixelSize(R.dimen.pictogram_max_size)
         val gap = resources.getDimensionPixelSize(R.dimen.pictogram_gap)
 
-        pictogramIds.forEach { id ->
+        pictograms.forEach { pictogram ->
             val image = ImageView(this).apply {
                 layoutParams = LinearLayout.LayoutParams(size, size).apply {
                     marginStart = gap
                     marginEnd = gap
                 }
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                load(PictogramRepository.imageSource(this@showSpeakDialog, id))
+                load(PictogramRepository.imageSource(this@showSpeakDialog, pictogram.pictogramId))
             }
             row.addView(image)
+            shown += pictogram to image
         }
 
         row.contentDescription = text
@@ -149,6 +239,16 @@ fun Context.showSpeakDialog(
     }
 
     dialog.show()
+
+    return SpeakDialog(
+        dialog = dialog,
+        speakText = speakText,
+        scroll = scroll,
+        text = text,
+        shown = shown,
+        highlightColor = ContextCompat.getColor(this, R.color.aac_highlight),
+        onHighlightColor = ContextCompat.getColor(this, R.color.aac_on_highlight)
+    )
 }
 
 //colori della barra che permette di annullare una cancellazione, uguali in tutte le schermate

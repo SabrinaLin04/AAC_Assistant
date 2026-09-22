@@ -66,7 +66,7 @@ class FavoritesFragment: Fragment() {
 
     //mostra un dialog contenente il testo e i pittogrammi del preferito selezionato e notifica il view model per incrementarne l'utilizzo
     private fun showFavorite(favorite: Favorite) {
-        speakAndShow(speechViewModel, favorite.text, favorite.pictogramIds)
+        speakAndShow(speechViewModel, favorite.text, favorite.pictograms)
         viewModel.markAsUsed(favorite.id)
     }
 
@@ -75,7 +75,7 @@ class FavoritesFragment: Fragment() {
         viewModel.deleteFavorite(favorite.id)
         Snackbar.make(binding.root, R.string.removed_phrase, Snackbar.LENGTH_LONG)
             .setAction(R.string.action_undo) {
-                viewModel.restoreFavorite(favorite.text, favorite.pictogramIds, favorite.contextId)
+                viewModel.restoreFavorite(favorite.text, favorite.pictograms, favorite.contextId)
             }
             .withUndoColors()
             .show()

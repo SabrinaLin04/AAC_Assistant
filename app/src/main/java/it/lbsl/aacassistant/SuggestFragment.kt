@@ -88,9 +88,13 @@ class SuggestFragment: Fragment() {
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
             isFavorite = { text -> favoritesViewModel.isFavorite(text) },
-            onToggleFavorite = { text, pictogramIds ->
-                val wasSaved = favoritesViewModel.isFavorite(text)
-                favoritesViewModel.toggleFavorite(text, pictogramIds, contextsViewModel.activeContextId.value)
+            onToggleFavorite = { message ->
+                val wasSaved = favoritesViewModel.isFavorite(message.text)
+                favoritesViewModel.toggleFavorite(
+                    message.text,
+                    message.pictograms,
+                    contextsViewModel.activeContextId.value
+                )
                 Snackbar.make(
                     binding.root,
                     if (wasSaved) R.string.removed_phrase else R.string.saved_in_my_phrases,
@@ -100,10 +104,10 @@ class SuggestFragment: Fragment() {
                 }.show()
             },
             onPictogramsClick = { message ->
-                speakAndShow(speechViewModel, message.text, message.pictogramIds)
+                speakAndShow(speechViewModel, message.text, message.pictograms)
             },
             onSpeak = { message ->
-                speakAndShow(speechViewModel, message.text, message.pictogramIds)
+                speakAndShow(speechViewModel, message.text, message.pictograms)
             }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -285,7 +289,7 @@ class SuggestFragment: Fragment() {
                 val chip = ItemSavedChipBinding.inflate(layoutInflater, binding.savedChips, false).root
                 chip.text = favorite.text
                 chip.setOnClickListener {
-                    speakAndShow(speechViewModel, favorite.text, favorite.pictogramIds)
+                    speakAndShow(speechViewModel, favorite.text, favorite.pictograms)
                     favoritesViewModel.markAsUsed(favorite.id)
                 }
                 binding.savedChips.addView(chip)

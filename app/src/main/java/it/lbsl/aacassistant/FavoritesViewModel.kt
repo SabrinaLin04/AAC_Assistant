@@ -45,14 +45,18 @@ class FavoritesViewModel : ViewModel() {
         }
     }
 
-    fun toggleFavorite(text: String, pictogramIds: List<Int> = emptyList(), contextId: String? = null) {
+    fun toggleFavorite(
+        text: String,
+        pictograms: List<WordPictogram> = emptyList(),
+        contextId: String? = null
+    ) {
         viewModelScope.launch {
             try {
                 val existing = _favorites.value?.firstOrNull { it.text == text }
                 if (existing != null) {
                     repository.deleteFavorite(existing.id)
                 } else {
-                    repository.addFavorite(text, pictogramIds, contextId)
+                    repository.addFavorite(text, pictograms, contextId)
                 }
                 loadFavorites()
             } catch (e: Exception) {
@@ -62,10 +66,14 @@ class FavoritesViewModel : ViewModel() {
     }
 
     //ricrea un preferito appena eliminato, per l'annulla dello swipe
-    fun restoreFavorite(text: String, pictogramIds: List<Int> = emptyList(), contextId: String? = null) {
+    fun restoreFavorite(
+        text: String,
+        pictograms: List<WordPictogram> = emptyList(),
+        contextId: String? = null
+    ) {
         viewModelScope.launch {
             try {
-                repository.addFavorite(text, pictogramIds, contextId)
+                repository.addFavorite(text, pictograms, contextId)
                 loadFavorites()
             } catch (e: Exception) {
                 _errorMessage.value = R.string.error_toggle_favorite

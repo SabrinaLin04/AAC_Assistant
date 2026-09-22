@@ -44,6 +44,11 @@
     <color name="aac_hint_container">@color/aac_warning_container</color>
     <color name="aac_on_hint_container">@color/aac_on_warning_container</color>
 
+    <!-- evidenziazione della parola in lettura: rosso chiaro, uguale in chiaro e in scuro
+         perché sta sempre su fondo bianco, sia nel testo sia dietro al pittogramma -->
+    <color name="aac_highlight">#F0C0C0</color>
+    <color name="aac_on_highlight">#5C2020</color>
+
     <!-- barra di annullamento -->
     <color name="aac_undo_container">#1E3A4C</color>
     <color name="aac_on_undo_container">#FFFFFF</color>
