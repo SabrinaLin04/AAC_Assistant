@@ -24,7 +24,6 @@
             android:paddingHorizontal="6dp"
             android:paddingBottom="4dp"
             android:textAppearance="@style/TextAppearance.App.Caption"
-            android:text='@{message.author.equals("user") ? @string/chat_author_user : @string/chat_author_assistant}'
             tools:text="Assistente" />
 
         <LinearLayout
@@ -57,46 +56,52 @@
 
             </HorizontalScrollView>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/textBubbleRow"
+            <TextView
+                android:id="@+id/messageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="56dp"
+                android:paddingHorizontal="18dp"
+                android:paddingVertical="14dp"
+                android:textAppearance="@style/TextAppearance.App.Message"
+                android:text="@{message.text}"
+                tools:text="Mi fa male la testa" />
+
+            <!-- azioni visibili, solo sui messaggi dell'assistente -->
+            <LinearLayout
+                android:id="@+id/actionRow"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
 
-                <TextView
-                    android:id="@+id/messageText"
-                    android:layout_width="wrap_content"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/speakButton"
+                    style="@style/Widget.AAC.Button.Primary"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:minHeight="56dp"
-                    android:paddingHorizontal="18dp"
-                    android:paddingVertical="14dp"
-                    android:textAppearance="@style/TextAppearance.App.Message"
-                    android:text="@{message.text}"
-                    app:layout_constrainedWidth="true"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/favoriteStar"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintHorizontal_chainStyle="packed"
-                    app:layout_constraintHorizontal_bias="0.0"
-                    tools:text="Mi piace giocare con i miei figli" />
+                    android:layout_weight="1"
+                    android:minHeight="@dimen/action_button_min"
+                    android:text="@string/action_speak"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_volume_up"
+                    app:iconGravity="textStart" />
 
-                <ImageButton
-                    android:id="@+id/favoriteStar"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="14dp"
-                    android:src="@android:drawable/btn_star_big_off"
-                    android:contentDescription="@string/action_toggle_favorite"
-                    app:layout_constraintStart_toEndOf="@id/messageText"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/messageText"
-                    app:layout_constraintBottom_toBottomOf="@id/messageText"
-                    app:layout_constraintHorizontal_bias="0.0" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveButton"
+                    style="@style/Widget.AAC.Button.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="@string/action_save"
+                    app:icon="@drawable/ic_star"
+                    app:iconGravity="textStart" />
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
 
         </LinearLayout>
 

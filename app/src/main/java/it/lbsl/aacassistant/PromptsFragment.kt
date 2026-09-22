@@ -33,6 +33,9 @@ class PromptsFragment : Fragment() {
             if (binding.systemPromptInput.text.toString() != config.systemPrompt) {
                 binding.systemPromptInput.setText(config.systemPrompt)
             }
+            if (binding.intentionPromptInput.text.toString() != config.promptIntention) {
+                binding.intentionPromptInput.setText(config.promptIntention)
+            }
             if (binding.incomingPromptInput.text.toString() != config.promptWithIncoming) {
                 binding.incomingPromptInput.setText(config.promptWithIncoming)
             }
@@ -51,6 +54,7 @@ class PromptsFragment : Fragment() {
         binding.saveButton.setOnClickListener {
             viewModel.save(
                 binding.systemPromptInput.text.toString(),
+                binding.intentionPromptInput.text.toString(),
                 binding.incomingPromptInput.text.toString(),
                 binding.genericPromptInput.text.toString()
             )

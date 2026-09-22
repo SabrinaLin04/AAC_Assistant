@@ -12,7 +12,8 @@ import coil.load
 import it.lbsl.aacassistant.databinding.ItemFavoriteBinding
 
 class FavoritesAdapter (
-    private val onUse: (Favorite) -> Unit
+    private val onUse: (Favorite) -> Unit,
+    private val onRemove: (Favorite) -> Unit
 ) : ListAdapter<Favorite, FavoritesAdapter.VH> (DIFF) {
 
     class VH(val binding: ItemFavoriteBinding) : RecyclerView.ViewHolder(binding.root)
@@ -50,6 +51,7 @@ class FavoritesAdapter (
                     }
 
                     setOnClickListener { onUse(favorite) }
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
 
                     load(PictogramRepository.imageSource(context, pictogramId)) {
                         crossfade(true)
@@ -61,6 +63,8 @@ class FavoritesAdapter (
                 holder.binding.pictogramRow.addView(imageView)
             }
 
+            holder.binding.pictogramScroll.contentDescription =
+                context.getString(R.string.pictograms_of, favorite.text)
             holder.binding.pictogramScroll.setOnClickListener { onUse(favorite) }
             holder.binding.pictogramRow.setOnClickListener { onUse(favorite) }
 
@@ -69,6 +73,8 @@ class FavoritesAdapter (
         }
 
         holder.binding.root.setOnClickListener { onUse(favorite) }
+        holder.binding.speakButton.setOnClickListener { onUse(favorite) }
+        holder.binding.removeButton.setOnClickListener { onRemove(favorite) }
     }
 
     fun itemAt(position: Int): Favorite = getItem(position)

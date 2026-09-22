@@ -15,6 +15,8 @@ data class Favorite(
     val text: String = "",
     val pictogramIds: List<Int> = emptyList(),
     val usageCount: Int = 0,
+    //il posto in cui la frase è stata salvata, null per quelle salvate prima del campo
+    val contextId: String? = null,
     val createdAt: Timestamp = Timestamp.now(),
 )
 
@@ -22,11 +24,15 @@ data class UserContext(
     @DocumentId val id: String = "",
     val name: String = "",
     val description: String = "",
+    //indice in aac_context_colors, null per i contesti salvati prima che esistesse il campo
+    val colorIndex: Int? = null,
+    val pictogramId: Int? = null,
     val createdAt: Timestamp = Timestamp.now()
 )
 
 data class PromptConfig(
     val systemPrompt: String = DEFAULT_SYSTEM,
+    val promptIntention: String = DEFAULT_INTENTION,
     val promptWithIncoming: String = DEFAULT_WITH_INCOMING,
     val promptGeneric: String = DEFAULT_GENERIC,
     val updatedAt: Long = System.currentTimeMillis()
@@ -39,6 +45,9 @@ data class PromptConfig(
                     "Nessuna numerazione, nessuna virgoletta, nessun commento."
 
         //quattro frasi, quante ne mostra la schermata dei suggerimenti
+        const val DEFAULT_INTENTION =
+            "Voglio dire questo: \"{messaggio}\". Suggerisci 4 frasi in prima persona con cui potrei dirlo."
+
         const val DEFAULT_WITH_INCOMING =
             "Qualcuno mi ha detto: \"{messaggio}\". Suggerisci 4 frasi che potrei rispondere."
 

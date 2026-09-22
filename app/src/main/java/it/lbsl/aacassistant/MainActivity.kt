@@ -4,13 +4,18 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.updatePadding
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.NavController
+import androidx.navigation.navOptions
 import androidx.activity.addCallback
+import androidx.activity.viewModels
 import androidx.core.view.GravityCompat
+import androidx.core.view.isVisible
+import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -18,6 +23,7 @@ import androidx.navigation.ui.setupWithNavController
 import it.lbsl.aacassistant.databinding.ActivityMainBinding
 import androidx.navigation.ui.navigateUp
 import com.firebase.ui.auth.AuthUI
+import com.google.firebase.auth.FirebaseAuth
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -29,6 +35,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
+    private val llmViewModel: LlmViewModel by viewModels()
+    private var caregiverConfirmed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,20 +44,19 @@ class MainActivity : AppCompatActivity() {
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         binding.lifecycleOwner = this
+        caregiverConfirmed = savedInstanceState?.getBoolean(KEY_CAREGIVER_CONFIRMED) ?: false
 
         setupWindowInsets()
         setSupportActionBar(binding.toolbar)
         setupNavigation()
 
-        onBackPressedDispatcher.addCallback(this) {
-            if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                binding.drawerLayout.closeDrawer(GravityCompat.START)
-            } else {
-                isEnabled = false
-                onBackPressedDispatcher.onBackPressed()
-            }
-        }
+        setupDrawerBack()
         schedulePictogramPrefetch()
+
+        //il modello si carica all'avvio, mentre l'utente sceglie il contesto nella schermata iniziale
+        if (llmViewModel.modelState.value is ModelState.Idle) {
+            llmViewModel.loadModel(applicationContext)
+        }
     }
 
     //pianifica un task in background per precaricare i pittogrammi quando il dispositivo è connesso a internet per ottimizzare le prestazioni
@@ -85,33 +92,81 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
+        //contesti, suggerimenti e frasi salvate mostrano il menu; le altre schermate la freccia indietro
+        appBarConfiguration = AppBarConfiguration(
+            setOf(R.id.contextsFragment, R.id.suggestFragment, R.id.favoritesFragment),
+            binding.drawerLayout
+        )
 
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
         binding.drawerMenuView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.switchModel -> showModelSwitchDialog()
-                else -> androidx.navigation.ui.NavigationUI
-                    .onNavDestinationSelected(item, navController)
+                R.id.switchModel -> confirmCaregiver { showModelSwitchDialog() }
+                R.id.promptsFragment -> confirmCaregiver { navigateFromDrawer(R.id.promptsFragment) }
+                else -> navigateFromDrawer(item.itemId)
             }
             binding.drawerLayout.closeDrawer(GravityCompat.START)
-            true
+            //la voce evidenziata la decide il cambio di schermata, non il tocco:
+            //una conferma annullata non deve lasciare selezionata una voce
+            false
         }
 
         //listener per ogni cambio di destinazione, abilita la chiusura automatica del drawer
         //una volta selezionata una nuova destinazione
-        navController.addOnDestinationChangedListener { _, _, _ ->
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            binding.drawerMenuView.setCheckedItem(destination.id)
             if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 binding.drawerLayout.closeDrawer(GravityCompat.START)
             }
         }
 
+        setupDrawerHeader()
         setupLogoutRow()
         setupProfileRow()
     }
 
+    //le voci del cassetto ripartono dalla scelta del contesto, che resta sempre in fondo allo stack.
+    //Niente salvataggio degli stack come in NavigationUI: la chat si apre sopra i contesti,
+    //e ripristinare lo stack dei contesti riaprirebbe la chat
+    private fun navigateFromDrawer(destinationId: Int) {
+        if (destinationId == R.id.contextsFragment) {
+            navController.popBackStack(R.id.contextsFragment, false)
+            return
+        }
+        navController.navigate(
+            destinationId,
+            null,
+            navOptions {
+                launchSingleTop = true
+                popUpTo(R.id.contextsFragment) { inclusive = false }
+            }
+        )
+    }
+
+    //il tasto indietro chiude il cassetto quando è aperto, altrimenti torna alla navigazione normale
+    private fun setupDrawerBack() {
+        val closeDrawer = onBackPressedDispatcher.addCallback(this, enabled = false) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+        }
+        binding.drawerLayout.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerOpened(drawerView: View) {
+                closeDrawer.isEnabled = true
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                closeDrawer.isEnabled = false
+            }
+        })
+    }
+
+    //mostra nel cassetto l'account su cui vengono sincronizzate le frasi
+    private fun setupDrawerHeader() {
+        val email = FirebaseAuth.getInstance().currentUser?.email
+        binding.navHeader.headerEmail.text = email
+        binding.navHeader.headerEmail.isVisible = !email.isNullOrBlank()
+    }
+
     private fun showModelSwitchDialog() {
-        val llmViewModel = androidx.lifecycle.ViewModelProvider(this)[LlmViewModel::class.java]
         val models = llmViewModel.availableModels
 
         if (models.size < 2) {
@@ -146,7 +201,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupProfileRow() {
         binding.profileRow.setOnClickListener {
             binding.drawerLayout.closeDrawer(GravityCompat.START)
-            navController.navigate(R.id.profileFragment)
+            navigateFromDrawer(R.id.profileFragment)
         }
     }
     private fun setupLogoutRow() {
@@ -158,6 +213,29 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSupportNavigateUp(): Boolean =
         navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+
+    //le impostazioni che cambiano il comportamento dell'app chiedono conferma, una volta per sessione
+    private fun confirmCaregiver(action: () -> Unit) {
+        if (caregiverConfirmed) {
+            action()
+            return
+        }
+        showConfirmationDialog(
+            title = getString(R.string.caregiver_confirm_title),
+            message = getString(R.string.caregiver_confirm_message),
+            positiveButtonText = getString(R.string.action_continue),
+            negativeButtonText = getString(R.string.action_cancel),
+            onConfirm = {
+                caregiverConfirmed = true
+                action()
+            }
+        )
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_CAREGIVER_CONFIRMED, caregiverConfirmed)
+    }
 
     //crea e mostra un dialog di conferma per l'uscita dall'account
     private fun confirmLogout() {
@@ -181,5 +259,9 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
                 finish()
             }
+    }
+
+    private companion object {
+        const val KEY_CAREGIVER_CONFIRMED = "caregiver_confirmed"
     }
 }

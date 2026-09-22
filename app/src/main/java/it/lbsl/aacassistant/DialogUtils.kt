@@ -14,6 +14,7 @@ import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.snackbar.Snackbar
 
 fun AlertDialog.styleCustomButtons(
     positiveColorRes: Int = R.color.aac_primary,
@@ -21,6 +22,7 @@ fun AlertDialog.styleCustomButtons(
 ) {
     val positiveButton = getButton(AlertDialog.BUTTON_POSITIVE) as? MaterialButton
     val negativeButton = getButton(AlertDialog.BUTTON_NEGATIVE) as? MaterialButton
+    val neutralButton = getButton(AlertDialog.BUTTON_NEUTRAL) as? MaterialButton
 
     val density = context.resources.displayMetrics.density
     fun dpToPx(dp: Int): Int = (dp * density).toInt()
@@ -43,9 +45,16 @@ fun AlertDialog.styleCustomButtons(
         insetBottom = 0
     }
 
-    listOfNotNull(positiveButton, negativeButton).forEach { button ->
+    neutralButton?.apply {
+        setTextColor(ContextCompat.getColor(context, R.color.aac_primary))
+        cornerRadius = dpToPx(22)
+        insetTop = 0
+        insetBottom = 0
+    }
+
+    listOfNotNull(positiveButton, negativeButton, neutralButton).forEach { button ->
         button.isAllCaps = false
-        button.minHeight = dpToPx(44)
+        button.minHeight = context.resources.getDimensionPixelSize(R.dimen.touch_target_min)
         button.setPadding(dpToPx(16), 0, dpToPx(16), 0)
 
         (button.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
@@ -83,7 +92,12 @@ fun Context.showConfirmationDialog(
 }
 
 //mostra il testo ingrandito con i suoi pittogrammi, la vista che si gira verso l'interlocutore
-fun Context.showSpeakDialog(text: String, pictogramIds: List<Int>) {
+//onRepeat aggiunge il pulsante "Ripeti", che fa ridire la frase senza chiudere il dialog
+fun Context.showSpeakDialog(
+    text: String,
+    pictogramIds: List<Int>,
+    onRepeat: (() -> Unit)? = null
+) {
     val view = LayoutInflater.from(this).inflate(R.layout.dialog_speak, null)
 
     view.findViewById<TextView>(R.id.speakText).text = text
@@ -106,6 +120,7 @@ fun Context.showSpeakDialog(text: String, pictogramIds: List<Int>) {
                     marginStart = gap
                     marginEnd = gap
                 }
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 load(PictogramRepository.imageSource(this@showSpeakDialog, id))
             }
             row.addView(image)
@@ -117,6 +132,7 @@ fun Context.showSpeakDialog(text: String, pictogramIds: List<Int>) {
     val dialog = MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_AACAssistant_Dialog)
         .setView(view)
         .setPositiveButton(R.string.action_close, null)
+        .apply { if (onRepeat != null) setNeutralButton(R.string.action_repeat, null) }
         .create()
 
     val shape = MaterialShapeDrawable().apply {
@@ -129,7 +145,15 @@ fun Context.showSpeakDialog(text: String, pictogramIds: List<Int>) {
 
     dialog.setOnShowListener {
         dialog.styleCustomButtons()
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener { onRepeat?.invoke() }
     }
 
     dialog.show()
+}
+
+//colori della barra che permette di annullare una cancellazione, uguali in tutte le schermate
+fun Snackbar.withUndoColors(): Snackbar = apply {
+    setBackgroundTint(ContextCompat.getColor(context, R.color.aac_undo_container))
+    setTextColor(ContextCompat.getColor(context, R.color.aac_on_undo_container))
+    setActionTextColor(ContextCompat.getColor(context, R.color.aac_primary_container))
 }

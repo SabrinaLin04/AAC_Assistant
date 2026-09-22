@@ -10,15 +10,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
-import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.navOptions
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import coil.load
+import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentSuggestBinding
+import it.lbsl.aacassistant.databinding.ItemSavedChipBinding
+import kotlinx.coroutines.launch
 
 class SuggestFragment: Fragment() {
 
@@ -26,9 +32,13 @@ class SuggestFragment: Fragment() {
     private val binding get() = _binding!!
     private val viewModel: LlmViewModel by activityViewModels()
     private val favoritesViewModel: FavoritesViewModel by activityViewModels()
-
     private val contextsViewModel: ContextsViewModel by activityViewModels()
+    private val speechViewModel: SpeechViewModel by activityViewModels()
+    private val hintsViewModel: HintsViewModel by activityViewModels()
+
     private lateinit var chatAdapter: ChatAdapter
+    private lateinit var boardAdapter: PictogramBoardAdapter
+    private var imeWasVisible = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,13 +56,11 @@ class SuggestFragment: Fragment() {
 
         setupRecyclerView()
         setupInputBar()
+        setupModeToggle()
+        setupPictogramBoard()
         setupSuggestButton()
         setupContextBar()
         observeViewModel()
-
-        if (viewModel.modelState.value is ModelState.Idle) {
-            viewModel.loadModel(requireContext().applicationContext)
-        }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -61,6 +69,11 @@ class SuggestFragment: Fragment() {
             binding.bottomContainer.updatePadding(
                 bottom = maxOf(bars.bottom, ime.bottom)
             )
+
+            //quando si apre la tastiera la tavola si chiude, altrimenti la chat resterebbe senza spazio
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (imeVisible && !imeWasVisible) showBoard(false)
+            imeWasVisible = imeVisible
 
             insets
         }
@@ -71,23 +84,26 @@ class SuggestFragment: Fragment() {
         _binding = null
     }
 
-    //configura la recycler view per la chat impostando l'adapter, la logica per salvare i preferiti e lo scorrimento automatico all'ultimo messaggio quando cambia il layout
+    //configura la recycler view per la chat impostando l'adapter, la logica per salvare le frasi e lo scorrimento automatico all'ultimo messaggio quando cambia il layout
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
             isFavorite = { text -> favoritesViewModel.isFavorite(text) },
             onToggleFavorite = { text, pictogramIds ->
                 val wasSaved = favoritesViewModel.isFavorite(text)
-                favoritesViewModel.toggleFavorite(text, pictogramIds)
+                favoritesViewModel.toggleFavorite(text, pictogramIds, contextsViewModel.activeContextId.value)
                 Snackbar.make(
                     binding.root,
-                    if (wasSaved) R.string.favorite_removed else R.string.favorite_added,
+                    if (wasSaved) R.string.removed_phrase else R.string.saved_in_my_phrases,
                     Snackbar.LENGTH_SHORT
                 ).setAction(R.string.action_view) {
                     findNavController().navigate(R.id.favoritesFragment)
                 }.show()
             },
             onPictogramsClick = { message ->
-                showPictogramDialog(message)
+                speakAndShow(speechViewModel, message.text, message.pictogramIds)
+            },
+            onSpeak = { message ->
+                speakAndShow(speechViewModel, message.text, message.pictogramIds)
             }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -103,9 +119,14 @@ class SuggestFragment: Fragment() {
         }
     }
 
+    //con del testo nel campo il pulsante lo invia, altrimenti chiede frasi adatte al posto
     private fun setupSuggestButton() {
         binding.suggestButton.setOnClickListener {
-            viewModel.requestSuggestions()
+            if (binding.messageInput.text.isNullOrBlank()) {
+                viewModel.requestSuggestions()
+            } else {
+                sendInput()
+            }
         }
     }
 
@@ -113,11 +134,14 @@ class SuggestFragment: Fragment() {
     private fun setupInputBar() {
         updateSendButton()
 
-        binding.sendButton.setOnClickListener {
-            val text = binding.messageInput.text.toString().trim()
-            if (text.isNotBlank()) {
-                viewModel.sendMessage(text)
-                binding.messageInput.text?.clear()
+        binding.sendButton.setOnClickListener { sendInput() }
+        binding.eraseWordButton.setOnClickListener { eraseLastWord() }
+
+        binding.messageInput.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                binding.messageInput.hint = ""
+            } else {
+                updateInputHint(binding.modeToggle.checkedButtonId)
             }
         }
 
@@ -128,26 +152,156 @@ class SuggestFragment: Fragment() {
         })
     }
 
+    //invia il testo nella modalità scelta: i suggerimenti partono subito, senza un secondo tocco
+    private fun sendInput() {
+        val text = binding.messageInput.text.toString().trim()
+        if (text.isBlank()) return
+        viewModel.sendMessage(text, selectedKind())
+        binding.messageInput.text?.clear()
+    }
+
+    //"Voglio dire" o "Mi hanno detto": il campo cambia suggerimento a seconda della scelta
+    private fun setupModeToggle() {
+        binding.modeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) updateInputHint(checkedId)
+        }
+        updateInputHint(binding.modeToggle.checkedButtonId)
+    }
+
+    private fun selectedKind(): InputKind =
+        if (binding.modeToggle.checkedButtonId == R.id.modeReply) InputKind.REPLY else InputKind.INTENTION
+
+    private fun updateInputHint(checkedId: Int) {
+        if (!binding.messageInput.hasFocus()) {
+            binding.messageInput.setHint(
+                if (checkedId == R.id.modeReply) R.string.input_hint_reply else R.string.input_hint_intention
+            )
+        }
+    }
+
+    //tavola di pittogrammi: si compone la frase toccando, senza bisogno della tastiera
+    private fun setupPictogramBoard() {
+        boardAdapter = PictogramBoardAdapter { item ->
+            //mentre arrivano i suggerimenti il campo è bloccato, anche per i pittogrammi
+            if (viewModel.chatState.value is ChatState.Generating) return@PictogramBoardAdapter
+            appendWord(item.word)
+            speechViewModel.speak(item.word)
+        }
+
+        val tileWidth = resources.getDimensionPixelSize(R.dimen.board_tile_width)
+        val columns = maxOf(3, resources.displayMetrics.widthPixels / tileWidth)
+        binding.pictogramBoard.layoutManager = GridLayoutManager(requireContext(), columns)
+        binding.pictogramBoard.adapter = boardAdapter
+
+        binding.boardToggle.setOnClickListener {
+            if (binding.pictogramBoard.isVisible) {
+                showBoard(false)
+                binding.messageInput.requestFocus()
+                WindowCompat.getInsetsController(requireActivity().window, binding.messageInput)
+                    .show(WindowInsetsCompat.Type.ime())
+            } else {
+                showBoard(true)
+            }
+        }
+        updateBoardToggle()
+
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val words = PictogramRepository.indexIds(appContext, CORE_WORDS)
+            boardAdapter.submitList(words.map { (word, id) -> BoardWord(word, id) })
+        }
+    }
+
+    //pittogrammi e tastiera si alternano: insieme lascerebbero troppo poco spazio alla chat
+    private fun showBoard(visible: Boolean) {
+        if (binding.pictogramBoard.isVisible == visible) return
+        binding.pictogramBoard.isVisible = visible
+        if (visible) {
+            binding.messageInput.clearFocus()
+            WindowCompat.getInsetsController(requireActivity().window, binding.messageInput)
+                .hide(WindowInsetsCompat.Type.ime())
+        }
+        updateBoardToggle()
+    }
+
+    private fun updateBoardToggle() {
+        val boardVisible = binding.pictogramBoard.isVisible
+        binding.boardToggle.setImageResource(
+            if (boardVisible) R.drawable.ic_keyboard else R.drawable.ic_grid_view
+        )
+        binding.boardToggle.contentDescription =
+            getString(if (boardVisible) R.string.board_hide else R.string.board_show)
+    }
+
+    private fun appendWord(word: String) {
+        val current = binding.messageInput.text.toString().trimEnd()
+        setInput(if (current.isEmpty()) word else "$current $word")
+    }
+
+    private fun eraseLastWord() {
+        val current = binding.messageInput.text.toString().trimEnd()
+        setInput(current.substringBeforeLast(' ', ""))
+    }
+
+    private fun setInput(text: String) {
+        binding.messageInput.setText(text)
+        binding.messageInput.setSelection(text.length)
+    }
+
     //abilita l'invio solo se c'è del testo scritto e nessuna generazione è in corso
     private fun updateSendButton() {
         val isGenerating = viewModel.chatState.value is ChatState.Generating
-        val enabled = !binding.messageInput.text.isNullOrBlank() && !isGenerating
+        val hasText = !binding.messageInput.text.isNullOrBlank()
+        val enabled = hasText && !isGenerating
         binding.sendButton.isEnabled = enabled
+        binding.eraseWordButton.isVisible = hasText
         updateSendButtonTint(enabled)
     }
 
-    //configura l'azione al tocco sulla barra del contesto per navigare verso la schermata di gestione contesti rimuovendo il fragment corrente dallo stack
+    //configura l'azione al tocco sulla barra del contesto per tornare alla scelta dei contesti rimuovendo il fragment corrente dallo stack
     private fun setupContextBar() {
         binding.contextBar.setOnClickListener {
-            findNavController().navigate(
-                R.id.contextsFragment,
-                null,
-                navOptions {
-                    launchSingleTop = true
-                    popUpTo(R.id.suggestFragment) { inclusive = false }
-                }
-            )
+            val navController = findNavController()
+            if (!navController.popBackStack(R.id.contextsFragment, false)) {
+                navController.navigate(R.id.contextsFragment)
+            }
         }
+    }
+
+    //le frasi salvate per questo posto compaiono per prime, finché la conversazione non è iniziata
+    private fun updateSavedPhrases() {
+        val contextId = contextsViewModel.activeContextId.value
+        val saved = if (contextId == null) {
+            emptyList()
+        } else {
+            favoritesViewModel.phrasesFor(contextId).take(MAX_SAVED_CHIPS)
+        }
+
+        binding.savedChips.removeAllViews()
+        binding.savedGroup.isVisible = saved.isNotEmpty() && viewModel.messages.value.isNullOrEmpty()
+
+        if (binding.savedGroup.isVisible) {
+            saved.forEach { favorite ->
+                val chip = ItemSavedChipBinding.inflate(layoutInflater, binding.savedChips, false).root
+                chip.text = favorite.text
+                chip.setOnClickListener {
+                    speakAndShow(speechViewModel, favorite.text, favorite.pictogramIds)
+                    favoritesViewModel.markAsUsed(favorite.id)
+                }
+                binding.savedChips.addView(chip)
+            }
+        }
+    }
+
+    //il primo aiuto spiega come scrivere, quello successivo come far parlare il telefono
+    private fun updateHint() {
+        val dismissed = hintsViewModel.dismissed.value ?: return
+        val messages = viewModel.messages.value.orEmpty()
+
+        val key = if (messages.any { it.author == AUTHOR_MODEL }) Hints.SPEAK else Hints.WRITE
+        val textRes = if (key == Hints.SPEAK) R.string.hint_speak else R.string.hint_write
+
+        binding.hintBarInclude.bindHint(key, textRes, dismissed) { hintsViewModel.dismiss(it) }
     }
 
     private fun updateSendButtonTint(enabled: Boolean) {
@@ -172,8 +326,11 @@ class SuggestFragment: Fragment() {
             }
         }
 
+        hintsViewModel.dismissed.observe(viewLifecycleOwner) { updateHint() }
+
         favoritesViewModel.favorites.observe(viewLifecycleOwner){
-            chatAdapter.refreshStars()
+            chatAdapter.refreshSavedState()
+            updateSavedPhrases()
         }
         favoritesViewModel.errorMessage.observe(viewLifecycleOwner){ resId ->
             resId ?: return@observe
@@ -184,15 +341,20 @@ class SuggestFragment: Fragment() {
         contextsViewModel.activeContext.observe(viewLifecycleOwner) { ctx ->
             viewModel.setContext(ctx?.name, ctx?.description)
             binding.contextLabel.text = ctx?.name ?: getString(R.string.context_none)
+            bindContextBar(ctx)
+            updateSavedPhrases()
         }
 
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
+            updateSavedPhrases()
+            updateHint()
+
             val oldSize = chatAdapter.itemCount
             chatAdapter.updateMessages(messages) {
                 if (messages.isNotEmpty()) {
                     val targetIndex = if (messages.size > oldSize) {
                         oldSize
-                    } else if (messages.first().author == "user" && messages.size > 1) {
+                    } else if (messages.first().author != AUTHOR_MODEL && messages.size > 1) {
                         1
                     } else {
                         0
@@ -229,6 +391,24 @@ class SuggestFragment: Fragment() {
         }
     }
 
+    //ripete nella barra il colore e il pittogramma del posto appena scelto
+    private fun bindContextBar(userContext: UserContext?) {
+        binding.contextColorBar.isVisible = userContext != null
+        if (userContext != null) {
+            binding.contextColorBar.setBackgroundColor(contextColor(requireContext(), userContext))
+        }
+
+        val pictogramId = userContext?.pictogramId
+        binding.contextBarPictogram.isVisible = pictogramId != null
+        if (pictogramId != null) {
+            binding.contextBarPictogram.load(PictogramRepository.imageSource(requireContext(), pictogramId)) {
+                crossfade(true)
+                placeholder(R.drawable.ic_pictogram_placeholder)
+                error(R.drawable.ic_pictogram_placeholder)
+            }
+        }
+    }
+
     //nasconde la chat principale e le schermate di errore per visualizzare l'animazione di caricamento
     private fun showLoading(message: String) {
         binding.loadingGroup.visibility = View.VISIBLE
@@ -252,10 +432,7 @@ class SuggestFragment: Fragment() {
         binding.errorMessage.text = message
     }
 
-    //mostra un dialog contenente il testo e i pittogrammi ingranditi del messaggio toccato
-    private fun showPictogramDialog(message: ChatMessage) {
-        if (message.pictogramIds.isEmpty()) return
-        requireContext().showSpeakDialog(message.text, message.pictogramIds)
+    private companion object {
+        const val MAX_SAVED_CHIPS = 6
     }
-
 }

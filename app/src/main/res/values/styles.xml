@@ -17,6 +17,12 @@
         <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textStyle">bold</item>
     </style>
+    <style name="TextAppearance.App.Hint" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/aac_on_hint_container</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:lineSpacingMultiplier">1.35</item>
+    </style>
     <style name="TextAppearance.App.Caption" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textSize">14sp</item>
         <item name="android:lineSpacingMultiplier">1.35</item>
@@ -36,10 +42,87 @@
         <item name="backgroundTint">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
     </style>
+    <!-- azione secondaria visibile: Salva, Rimuovi, Scrivi tu una frase -->
+    <style name="Widget.AAC.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/action_button_min</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/aac_on_primary_container</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="iconTint">@color/aac_on_primary_container</item>
+    </style>
+
+    <!-- esempi toccabili sotto il campo -->
+    <style name="Widget.AAC.Chip.Example" parent="Widget.Material3.Chip.Assist">
+        <item name="android:minHeight">@dimen/touch_target_min</item>
+        <item name="android:textSize">16sp</item>
+        <item name="chipBackgroundColor">@color/aac_primary_container</item>
+        <item name="android:textColor">@color/aac_on_primary_container</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipCornerRadius">12dp</item>
+        <item name="ensureMinTouchTargetSize">true</item>
+    </style>
+
     <style name="Widget.AAC.Card" parent="Widget.Material3.CardView.Elevated">
         <item name="cardBackgroundColor">@color/aac_surface_container</item>
         <item name="cardCornerRadius">14dp</item>
         <item name="cardElevation">1dp</item>
+    </style>
+
+    <!-- titolo grande: Welcome e dialog "Leggi" -->
+    <style name="TextAppearance.App.Display" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textSize">28sp</item>
+        <item name="android:lineSpacingMultiplier">1.25</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- etichetta che apre una sezione: "I tuoi dati", "Istruzioni di sistema" -->
+    <style name="TextAppearance.App.SectionLabel" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <!-- campo di testo: stesso raggio delle card, testo mai sotto i 17sp -->
+    <style name="Widget.AAC.TextField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">@dimen/card_corner</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/card_corner</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/card_corner</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/card_corner</item>
+        <item name="boxStrokeColor">@color/aac_text_field_stroke</item>
+        <item name="hintTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:textColorHint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="Widget.AAC.TextField.Input" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textSize">17sp</item>
+        <item name="android:minHeight">@dimen/touch_target_min</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:lineSpacingMultiplier">1.35</item>
+    </style>
+
+    <!-- card di una pagina ferma (Crediti, Profilo, Prompt): come quelle di lista,
+         con il contorno e più respiro dentro -->
+    <style name="Widget.AAC.Card.Page" parent="Widget.AAC.Card">
+        <item name="cardCornerRadius">@dimen/card_corner</item>
+        <item name="strokeColor">?attr/colorOutlineVariant</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:layout_marginBottom">@dimen/card_gap</item>
+    </style>
+
+    <!-- riga in fondo al cassetto: stessa altezza minima dei bottoni -->
+    <style name="Widget.AAC.DrawerRow" parent="">
+        <item name="android:minHeight">@dimen/action_button_min</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingHorizontal">@dimen/screen_margin</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
     </style>
 
     <style name="ThemeOverlay.AACAssistant.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">

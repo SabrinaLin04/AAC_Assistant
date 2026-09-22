@@ -7,13 +7,14 @@
     android:paddingTop="8dp">
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.AAC.TextField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/context_name_hint"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+        android:hint="@string/context_name_hint">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editContextName"
+            style="@style/Widget.AAC.TextField.Input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textCapSentences"
@@ -22,14 +23,15 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.AAC.TextField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:hint="@string/context_description_hint"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+        android:layout_marginTop="@dimen/card_gap"
+        android:hint="@string/context_description_hint">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editContextDescription"
+            style="@style/Widget.AAC.TextField.Input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="top|start"

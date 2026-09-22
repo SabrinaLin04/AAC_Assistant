@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentFavoritesBinding
@@ -16,6 +15,8 @@ class FavoritesFragment: Fragment() {
     private var _binding: FragmentFavoritesBinding? = null
     private val binding get() = _binding!!
     private val viewModel: FavoritesViewModel by activityViewModels()
+    private val speechViewModel: SpeechViewModel by activityViewModels()
+    private val hintsViewModel: HintsViewModel by activityViewModels()
     private lateinit var adapter: FavoritesAdapter
 
     override fun onCreateView(
@@ -32,16 +33,23 @@ class FavoritesFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        hintsViewModel.dismissed.observe(viewLifecycleOwner) { dismissed ->
+            dismissed ?: return@observe
+            binding.hintBarInclude.bindHint(Hints.FAVORITES, R.string.hint_favorites, dismissed) {
+                hintsViewModel.dismiss(it)
+            }
+        }
+
         setupRecyclerView()
         setupSwipeToDelete()
         observeViewModel()
     }
 
     private fun setupRecyclerView(){
-        adapter = FavoritesAdapter{ favorite ->
-            showFavorite(favorite)
-        }
-        binding.favoritesRecycler.layoutManager = LinearLayoutManager(requireContext())
+        adapter = FavoritesAdapter(
+            onUse = { favorite -> showFavorite(favorite) },
+            onRemove = { favorite -> removeWithUndo(favorite) }
+        )
         binding.favoritesRecycler.adapter = adapter
     }
 
@@ -58,8 +66,19 @@ class FavoritesFragment: Fragment() {
 
     //mostra un dialog contenente il testo e i pittogrammi del preferito selezionato e notifica il view model per incrementarne l'utilizzo
     private fun showFavorite(favorite: Favorite) {
-        requireContext().showSpeakDialog(favorite.text, favorite.pictogramIds)
+        speakAndShow(speechViewModel, favorite.text, favorite.pictogramIds)
         viewModel.markAsUsed(favorite.id)
+    }
+
+    //rimuove subito la frase lasciando dalla snackbar la possibilità di ripristinarla
+    private fun removeWithUndo(favorite: Favorite) {
+        viewModel.deleteFavorite(favorite.id)
+        Snackbar.make(binding.root, R.string.removed_phrase, Snackbar.LENGTH_LONG)
+            .setAction(R.string.action_undo) {
+                viewModel.restoreFavorite(favorite.text, favorite.pictogramIds, favorite.contextId)
+            }
+            .withUndoColors()
+            .show()
     }
 
     //implementa la funzionalità di scorrimento laterale per eliminare un elemento dalla lista offrendo la possibilità di annullare l'azione
@@ -80,14 +99,7 @@ class FavoritesFragment: Fragment() {
                     message = getString(R.string.delete_favorite_confirm_message, favorite.text),
                     positiveButtonText = getString(R.string.action_delete),
                     negativeButtonText = getString(R.string.action_cancel),
-                    onConfirm = {
-                        viewModel.deleteFavorite(favorite.id)
-                        Snackbar.make(binding.root, R.string.favorite_deleted, Snackbar.LENGTH_LONG)
-                            .setAction(R.string.action_undo) {
-                                viewModel.restoreFavorite(favorite.text, favorite.pictogramIds)
-                            }
-                            .show()
-                    },
+                    onConfirm = { removeWithUndo(favorite) },
                     onCancel = {
                         adapter.notifyItemChanged(position)
                     }

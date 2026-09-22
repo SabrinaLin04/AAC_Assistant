@@ -45,14 +45,14 @@ class FavoritesViewModel : ViewModel() {
         }
     }
 
-    fun toggleFavorite(text: String, pictogramIds: List<Int> = emptyList()) {
+    fun toggleFavorite(text: String, pictogramIds: List<Int> = emptyList(), contextId: String? = null) {
         viewModelScope.launch {
             try {
                 val existing = _favorites.value?.firstOrNull { it.text == text }
                 if (existing != null) {
                     repository.deleteFavorite(existing.id)
                 } else {
-                    repository.addFavorite(text, pictogramIds)
+                    repository.addFavorite(text, pictogramIds, contextId)
                 }
                 loadFavorites()
             } catch (e: Exception) {
@@ -62,10 +62,10 @@ class FavoritesViewModel : ViewModel() {
     }
 
     //ricrea un preferito appena eliminato, per l'annulla dello swipe
-    fun restoreFavorite(text: String, pictogramIds: List<Int> = emptyList()) {
+    fun restoreFavorite(text: String, pictogramIds: List<Int> = emptyList(), contextId: String? = null) {
         viewModelScope.launch {
             try {
-                repository.addFavorite(text, pictogramIds)
+                repository.addFavorite(text, pictogramIds, contextId)
                 loadFavorites()
             } catch (e: Exception) {
                 _errorMessage.value = R.string.error_toggle_favorite
@@ -98,6 +98,17 @@ class FavoritesViewModel : ViewModel() {
 
     fun isFavorite(text: String) : Boolean =
         _favorites.value?.any {it.text == text} == true
+
+    //frasi salvate in un posto, già ordinate per uso
+    fun phrasesFor(contextId: String): List<Favorite> =
+        _favorites.value.orEmpty().filter { it.contextId == contextId }
+
+    //quante frasi sono state salvate in ciascun posto
+    fun phraseCounts(): Map<String, Int> =
+        _favorites.value.orEmpty()
+            .mapNotNull { it.contextId }
+            .groupingBy { it }
+            .eachCount()
 
 
     fun clearError() {

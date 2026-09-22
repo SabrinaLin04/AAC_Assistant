@@ -3,7 +3,7 @@
     <color name="aac_surface">#121316</color>
     <color name="aac_surface_variant">#22242A</color>
     <color name="aac_surface_container">#1E2026</color>
-    <color name="aac_outline">#44474E</color>
+    <color name="aac_outline">#666B73</color>
     <color name="aac_outline_variant">#32353B</color>
     <color name="aac_on_surface">#E2E2E6</color>
     <color name="aac_on_surface_variant">#C4C6CF</color>
@@ -12,7 +12,7 @@
     <color name="aac_primary_container">#204862</color>
     <color name="aac_on_primary_container">#DCE8F1</color>
     <color name="aac_success">#55A384</color>
-    <color name="aac_on_success">#003825</color>
+    <color name="aac_on_success">#002E1E</color>
     <color name="aac_error">#E06D6D</color>
     <color name="aac_on_error">#410002</color>
     <color name="aac_error_container">#5C2020</color>
@@ -24,4 +24,12 @@
     <color name="aac_pictogram_background">#FFFFFF</color>
     <color name="status_available">#55A384</color>
     <color name="status_busy">#C9A13B</color>
+
+    <color name="aac_context_1">#E09A9A</color>
+    <color name="aac_context_2">#C9A13B</color>
+    <color name="aac_context_3">#55A384</color>
+    <color name="aac_context_4">#7FA9C6</color>
+
+    <color name="aac_undo_container">#DCE8F1</color>
+    <color name="aac_on_undo_container">#1E3A4C</color>
 </resources>

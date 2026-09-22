@@ -20,9 +20,10 @@ class PromptsViewModel : ViewModel() {
         registration = repo.observePrompts { _config.value = it }
     }
 
-    fun save(system: String, withIncoming: String, generic: String) {
+    fun save(system: String, intention: String, withIncoming: String, generic: String) {
         val config = PromptConfig(
             systemPrompt = system.ifBlank { PromptConfig.DEFAULT_SYSTEM },
+            promptIntention = intention.ifBlank { PromptConfig.DEFAULT_INTENTION },
             promptWithIncoming = withIncoming.ifBlank { PromptConfig.DEFAULT_WITH_INCOMING },
             promptGeneric = generic.ifBlank { PromptConfig.DEFAULT_GENERIC }
         )

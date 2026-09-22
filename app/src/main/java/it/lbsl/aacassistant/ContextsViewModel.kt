@@ -4,7 +4,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
@@ -33,8 +32,13 @@ class ContextsViewModel : ViewModel() {
         addSource(_isLoading) { update() }
     }
 
-    val activeContext: LiveData<UserContext?> = _activeContextId.map { id ->
-        _contexts.value?.firstOrNull { it.id == id }
+    //si ricalcola anche quando cambia la lista, così un contesto modificato arriva aggiornato ai suggerimenti
+    val activeContext: LiveData<UserContext?> = MediatorLiveData<UserContext?>().apply {
+        fun update() {
+            value = _contexts.value?.firstOrNull { it.id == _activeContextId.value }
+        }
+        addSource(_contexts) { update() }
+        addSource(_activeContextId) { update() }
     }
 
     init {
@@ -56,10 +60,18 @@ class ContextsViewModel : ViewModel() {
         }
     }
 
-    fun addContext(name: String, description: String) {
+    fun addContext(
+        name: String,
+        description: String,
+        colorIndex: Int? = null,
+        pictogramId: Int? = null
+    ) {
         viewModelScope.launch {
             try {
-                repository.addContext(name, description)
+                //il colore ruota sulla palette in ordine di creazione
+                val color = colorIndex ?: (_contexts.value?.size ?: 0)
+                val pictogram = pictogramId ?: pictogramForName(name)
+                repository.addContext(name, description, color, pictogram)
                 loadContexts()
             } catch (e: Exception) {
                 _errorMessage.value = R.string.error_add_context
@@ -70,7 +82,13 @@ class ContextsViewModel : ViewModel() {
     fun updateContext(contextId: String, name: String, description: String) {
         viewModelScope.launch {
             try {
+                val previous = _contexts.value?.firstOrNull { it.id == contextId }
                 repository.updateContext(contextId, name, description)
+
+                //il pittogramma si ricalcola se cambia il nome o se il contesto non ne ha ancora uno
+                if (previous == null || previous.name != name || previous.pictogramId == null) {
+                    repository.setContextPictogram(contextId, pictogramForName(name))
+                }
                 loadContexts()
             } catch (e: Exception) {
                 _errorMessage.value = R.string.error_update_context
@@ -92,17 +110,29 @@ class ContextsViewModel : ViewModel() {
         }
     }
 
-    fun selectContext(contextId: String) {
+    //imposta il contesto attivo, null significa nessun contesto
+    fun activateContext(contextId: String?) {
+        //aggiorno subito il valore locale: la schermata dei suggerimenti si apre
+        //nello stesso momento e deve già mostrare il posto scelto
+        val previous = _activeContextId.value
+        _activeContextId.value = contextId
+
         viewModelScope.launch {
             try {
-                val newActiveId = if (_activeContextId.value == contextId) null else contextId
-                repository.setActiveContext(newActiveId)
-                _activeContextId.value = newActiveId
+                repository.setActiveContext(contextId)
             } catch (e: Exception) {
+                _activeContextId.value = previous
                 _errorMessage.value = R.string.error_select_context
             }
         }
     }
+
+    //cerca un pittogramma per il nome del contesto, fermandosi alla prima parola che ne ha uno
+    private suspend fun pictogramForName(name: String): Int? =
+        name.lowercase()
+            .split(Regex("[^\\p{L}]+"))
+            .filter { it.length >= 2 && it !in STOPWORDS }
+            .firstNotNullOfOrNull { PictogramRepository.findPictogram(it) }
 
     fun clearError() {
         _errorMessage.value = null

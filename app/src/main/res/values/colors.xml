@@ -3,7 +3,9 @@
     <color name="aac_surface">#F7F7F8</color>
     <color name="aac_surface_variant">#EDEDEF</color>
     <color name="aac_surface_container">#FFFFFF</color>
-    <color name="aac_outline">#C9C9CE</color>
+    <!-- bordo delle cose che si usano (campi di testo): almeno 3:1 sul fondo.
+         I contorni decorativi delle card usano aac_outline_variant -->
+    <color name="aac_outline">#878C93</color>
     <color name="aac_outline_variant">#DEDEE2</color>
     <color name="aac_on_surface">#2B2B2B</color>
     <color name="aac_on_surface_variant">#5A5A5E</color>
@@ -24,4 +26,25 @@
     <color name="aac_pictogram_background">#FFFFFF</color>
     <color name="status_available">#3A735C</color>
     <color name="status_busy">#8A6D1F</color>
+
+    <!-- colori dei contesti: rinforzano nome e pittogramma, non li sostituiscono -->
+    <color name="aac_context_1">#B84A4A</color>
+    <color name="aac_context_2">#8A6D1F</color>
+    <color name="aac_context_3">#3A735C</color>
+    <color name="aac_context_4">#426F8F</color>
+
+    <array name="aac_context_colors">
+        <item>@color/aac_context_1</item>
+        <item>@color/aac_context_2</item>
+        <item>@color/aac_context_3</item>
+        <item>@color/aac_context_4</item>
+    </array>
+
+    <!-- striscia di aiuto: stessa tinta del banner demo, già definita anche per la notte -->
+    <color name="aac_hint_container">@color/aac_warning_container</color>
+    <color name="aac_on_hint_container">@color/aac_on_warning_container</color>
+
+    <!-- barra di annullamento -->
+    <color name="aac_undo_container">#1E3A4C</color>
+    <color name="aac_on_undo_container">#FFFFFF</color>
 </resources>

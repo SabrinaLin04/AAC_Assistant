@@ -48,11 +48,21 @@ data class ChatMessage(
     val id: Long = System.nanoTime()
 )
 
+//autori dei messaggi in chat: cosa vuole dire l'utente, cosa gli hanno detto, cosa suggerisce il modello
+const val AUTHOR_USER = "user"
+const val AUTHOR_PARTNER = "partner"
+const val AUTHOR_MODEL = "model"
+
+//come va letto il testo inviato: una cosa da dire o una cosa detta dall'altra persona
+enum class InputKind { INTENTION, REPLY }
+
+private data class PendingInput(val text: String, val kind: InputKind)
+
 private const val TAG = "LlmViewModel"
 
 //articoli, preposizioni e pronomi: non hanno un pittogramma corrispondente in ARASAAC
 //e cercarli significherebbe solo sprecare chiamate di rete
-private val STOPWORDS = setOf(
+internal val STOPWORDS = setOf(
     "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
     "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
     "del", "dello", "della", "dei", "degli", "delle",
@@ -112,7 +122,7 @@ class LlmViewModel : ViewModel() {
 
     private var contextDescription: String? = null
     private var contextName: String? = null
-    private var lastIncoming: String? = null
+    private var pendingInput: PendingInput? = null
 
     private var metricsLogger: MetricsLogger? = null
     private var appContext: Context? = null
@@ -180,6 +190,7 @@ class LlmViewModel : ViewModel() {
 
     //seleziona un set di frasi preimpostate per la modalità demo in base alla parola chiave del contesto attivo
     private fun pickDemoSuggestions(): List<String> {
+        if (pendingInput?.kind == InputKind.REPLY) return DEMO_REPLIES
         val ctx = contextDescription?.lowercase() ?: return DEMO_FALLBACK
         return DEMO_SUGGESTIONS.entries
             .firstOrNull { (key, _) -> ctx.contains(key) }
@@ -252,6 +263,9 @@ class LlmViewModel : ViewModel() {
             .take(10)
     }
 
+    //stessa ricerca usata per i messaggi, per le frasi pronte che nascono già scritte
+    suspend fun pictogramsFor(text: String): List<Int> = findPictogramsFor(text)
+
     //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
     fun setContext(name: String?, description: String?) {
         //il nome serve solo alle metriche, si aggiorna anche a descrizione invariata
@@ -261,7 +275,7 @@ class LlmViewModel : ViewModel() {
         if (description == contextDescription) return
 
         contextDescription = description
-        lastIncoming = null
+        pendingInput = null
 
         if (engine != null) {
             createConversation()
@@ -270,48 +284,59 @@ class LlmViewModel : ViewModel() {
         _chatState.value = ChatState.Idle
     }
 
-    fun sendMessage(text: String) {
+    //invia quello che l'utente vuole dire, o quello che gli hanno detto, e chiede subito i suggerimenti
+    fun sendMessage(text: String, kind: InputKind) {
+        if (_chatState.value is ChatState.Generating) return
+        _chatState.value = ChatState.Generating
+
         viewModelScope.launch {
-            lastIncoming = text
+            pendingInput = PendingInput(text, kind)
+            val author = if (kind == InputKind.REPLY) AUTHOR_PARTNER else AUTHOR_USER
             val ids = findPictogramsFor(text)
-            _messages.value = _messages.value.orEmpty() + ChatMessage("user", text, ids)
+            _messages.value = _messages.value.orEmpty() + ChatMessage(author, text, ids)
+            generateSuggestions()
         }
     }
 
-    //invia un prompt generico al modello per farsi suggerire quattro nuove frasi contestuali da mostrare all'utente
+    //chiede frasi adatte al contesto attivo, senza un testo di partenza
     fun requestSuggestions() {
         if (_chatState.value is ChatState.Generating) return
+        _chatState.value = ChatState.Generating
+        viewModelScope.launch { generateSuggestions() }
+    }
+
+    //genera quattro frasi col modello, oppure le prende da quelle preimpostate in modalità demo
+    private suspend fun generateSuggestions() {
+        _chatState.value = ChatState.Generating
+
         if (_modelState.value is ModelState.DemoMode) {
-            requestDemoSuggestions()
-            return
+            delay(600)
+            publishSuggestions(pickDemoSuggestions())
+        } else {
+            createConversation()
+            val conv = conversation
+            if (conv != null) {
+                val generation = streamResponse(conv, buildSuggestionPrompt())
+                logMetrics(generation)
+                publishSuggestions(splitSuggestions(generation.text))
+            }
         }
 
-        viewModelScope.launch {
-            _chatState.value = ChatState.Generating
-
-            createConversation()
-            val conv = conversation ?: run {
-                _chatState.value = ChatState.Idle
-                return@launch
-            }
-
-            val generation = streamResponse(conv, buildSuggestionPrompt())
-            logMetrics(generation)
-
-            publishSuggestions(splitSuggestions(generation.text))
-
-            lastIncoming = null
-
-            if (_chatState.value is ChatState.Generating) {
-                _chatState.value = ChatState.Idle
-            }
+        pendingInput = null
+        if (_chatState.value is ChatState.Generating) {
+            _chatState.value = ChatState.Idle
         }
     }
 
-    //se c'è un messaggio ricevuto si chiede una risposta, altrimenti frasi libere sul contesto
-    private fun buildSuggestionPrompt(): String =
-        lastIncoming?.let { promptConfig.promptWithIncoming.replace("{messaggio}", it) }
-            ?: promptConfig.promptGeneric
+    //il prompt dipende da cosa è stato inviato: un'intenzione, una frase ricevuta o niente
+    private fun buildSuggestionPrompt(): String {
+        val input = pendingInput ?: return promptConfig.promptGeneric
+        val template = when (input.kind) {
+            InputKind.INTENTION -> promptConfig.promptIntention
+            InputKind.REPLY -> promptConfig.promptWithIncoming
+        }
+        return template.replace("{messaggio}", input.text)
+    }
 
     //esito di una generazione, con i tempi che servono alle misure della tesi
     private data class Generation(
@@ -377,20 +402,6 @@ class LlmViewModel : ViewModel() {
         withContext(Dispatchers.IO) { logger.log(entry) }
     }
 
-    //simula la richiesta di suggerimenti pubblicando le opzioni preimpostate della modalità demo
-    private fun requestDemoSuggestions() {
-        viewModelScope.launch {
-            _chatState.value = ChatState.Generating
-            delay(600)
-
-            val suggestions = if (lastIncoming != null) DEMO_REPLIES else pickDemoSuggestions()
-
-            publishSuggestions(suggestions)
-            lastIncoming = null
-            _chatState.value = ChatState.Idle
-        }
-    }
-
     //ripulisce l'output grezzo del modello da elenchi puntati, numerazione e virgolette
     private fun splitSuggestions(raw: String): List<String> =
         raw.lines()
@@ -411,11 +422,11 @@ class LlmViewModel : ViewModel() {
 
         //ogni frase cerca i propri pittogrammi, le quattro ricerche procedono insieme
         val newMessages = suggestions
-            .map { text -> async { ChatMessage("model", text, findPictogramsFor(text)) } }
+            .map { text -> async { ChatMessage(AUTHOR_MODEL, text, findPictogramsFor(text)) } }
             .awaitAll()
 
         //se c'è una frase la mantiene
-        _messages.value = if (lastIncoming != null) {
+        _messages.value = if (pendingInput != null) {
             _messages.value.orEmpty() + newMessages
         } else {
             newMessages

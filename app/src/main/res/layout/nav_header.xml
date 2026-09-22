@@ -1,34 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="176dp"
-    android:background="?attr/colorPrimary"
-    android:gravity="bottom"
-    android:orientation="vertical"
-    android:padding="20dp">
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <ImageView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:contentDescription="@null"
-        android:src="@mipmap/ic_launcher_round" />
-
-    <TextView
-        android:id="@+id/headerName"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:textAppearance="@style/TextAppearance.App.Title"
-        android:textColor="?attr/colorOnPrimary"
-        android:text="@string/app_name" />
+        android:layout_height="176dp"
+        android:background="?attr/colorPrimary"
+        android:gravity="bottom"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_margin">
 
-    <TextView
-        android:id="@+id/headerEmail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textAppearance="@style/TextAppearance.App.Caption"
-        android:textColor="?attr/colorOnPrimary"
-        android:alpha="0.87" />
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_logo_circle"
+            android:contentDescription="@null"
+            android:padding="6dp"
+            android:src="@mipmap/ic_launcher_round" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/headerName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/app_name"
+            android:textAppearance="@style/TextAppearance.App.Title"
+            android:textColor="?attr/colorOnPrimary" />
+
+        <TextView
+            android:id="@+id/headerEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.App.Caption"
+            android:textColor="?attr/colorOnPrimary"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</layout>

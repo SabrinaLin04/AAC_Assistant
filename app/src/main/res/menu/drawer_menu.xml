@@ -1,31 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <group android:checkableBehavior="single">
+
+    <!-- le schermate di chi usa l'app -->
+    <group
+        android:id="@+id/groupUser"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/contextsFragment"
+            android:icon="@drawable/ic_place"
+            android:title="@string/title_contexts" />
         <item
             android:id="@+id/suggestFragment"
-            android:icon="@android:drawable/ic_menu_edit"
+            android:icon="@drawable/ic_chat"
             android:title="@string/title_suggest" />
         <item
             android:id="@+id/favoritesFragment"
-            android:icon="@android:drawable/btn_star_big_on"
+            android:icon="@drawable/ic_star"
             android:title="@string/title_favorites" />
-        <item
-            android:id="@+id/contextsFragment"
-            android:icon="@android:drawable/ic_menu_agenda"
-            android:title="@string/title_contexts" />
-        <item
-            android:id="@+id/promptsFragment"
-            android:icon="@android:drawable/ic_menu_preferences"
-            android:title="@string/title_prompts" />
-        <item
-            android:id="@+id/creditsFragment"
-            android:icon="@android:drawable/ic_menu_info_details"
-            android:title="@string/title_credits" />
     </group>
 
+    <!-- le impostazioni di chi prepara l'app, separate dall'uso quotidiano -->
     <item
-        android:id="@+id/switchModel"
-        android:icon="@android:drawable/ic_menu_rotate"
-        android:title="@string/action_switch_model" />
+        android:id="@+id/caregiverSection"
+        android:title="@string/drawer_caregiver_section">
+        <menu>
+            <group
+                android:id="@+id/groupCaregiver"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/guideFragment"
+                    android:icon="@drawable/ic_menu_book"
+                    android:title="@string/title_guide" />
+                <item
+                    android:id="@+id/promptsFragment"
+                    android:icon="@drawable/ic_tune"
+                    android:title="@string/title_prompts" />
+            </group>
+            <item
+                android:id="@+id/switchModel"
+                android:icon="@drawable/ic_swap_horiz"
+                android:title="@string/action_switch_model" />
+            <group
+                android:id="@+id/groupCaregiverInfo"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/creditsFragment"
+                    android:icon="@drawable/ic_info"
+                    android:title="@string/title_credits" />
+            </group>
+        </menu>
+    </item>
 
 </menu>

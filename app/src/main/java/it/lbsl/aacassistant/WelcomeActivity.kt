@@ -17,7 +17,9 @@ import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
 import it.lbsl.aacassistant.databinding.ActivityWelcomeBinding
 import kotlinx.coroutines.launch
-import androidx.core.view.updatePadding
+import android.view.ViewGroup
+import androidx.core.view.marginBottom
+import androidx.core.view.updateLayoutParams
 
 class WelcomeActivity : AppCompatActivity() {
 
@@ -34,11 +36,17 @@ class WelcomeActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityWelcomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        //margini e non padding, così l'icona resta centrata nel cerchio e il testo nel pulsante
+        val buttonMargin = binding.signInButton.marginBottom
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-            binding.appLogo.updatePadding(top = systemBars.top / 2)
-            binding.signInButton.updatePadding(bottom = systemBars.bottom)
+            binding.appLogo.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                topMargin = systemBars.top
+            }
+            binding.signInButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = buttonMargin + systemBars.bottom
+            }
 
             insets
         }

@@ -32,4 +32,11 @@
 
     </application>
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- da Android 11 i motori di sintesi vocale vanno dichiarati per essere visibili -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 </manifest>

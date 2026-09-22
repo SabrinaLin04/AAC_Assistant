@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/suggestFragment">
+    app:startDestination="@id/contextsFragment">
 
     <fragment
         android:id="@+id/suggestFragment"
@@ -20,7 +20,7 @@
     <fragment
         android:id="@+id/contextsFragment"
         android:name="it.lbsl.aacassistant.ContextsFragment"
-        android:label="@string/title_contexts"
+        android:label="@string/contexts_title"
         tools:layout="@layout/fragment_contexts" />
     <fragment
         android:id="@+id/creditsFragment"
@@ -33,6 +33,12 @@
         android:name="it.lbsl.aacassistant.ProfileFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/guideFragment"
+        android:name="it.lbsl.aacassistant.GuideFragment"
+        android:label="@string/title_guide"
+        tools:layout="@layout/fragment_guide" />
 
     <fragment
         android:id="@+id/promptsFragment"

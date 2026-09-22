@@ -1,5 +1,7 @@
 package it.lbsl.aacassistant
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -7,7 +9,6 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -18,11 +19,16 @@ import it.lbsl.aacassistant.databinding.ItemChatMessageBinding
 class ChatAdapter (
     private val isFavorite: (String) -> Boolean = { false },
     private val onToggleFavorite: (String, List<Int>) -> Unit = { _, _ -> },
-    private val onPictogramsClick: (ChatMessage) -> Unit = { }
+    private val onPictogramsClick: (ChatMessage) -> Unit = { },
+    private val onSpeak: (ChatMessage) -> Unit = { }
 ) : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(ChatMessageDiffCallback()) {
 
     class ChatViewHolder(val binding: ItemChatMessageBinding) :
-        RecyclerView.ViewHolder(binding.root)
+        RecyclerView.ViewHolder(binding.root) {
+
+        //spessore del bordo dello stile Outlined, da rimettere quando una frase non è più salvata
+        val saveStrokeWidth = binding.saveButton.strokeWidth
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
         val binding = ItemChatMessageBinding.inflate(
@@ -33,10 +39,18 @@ class ChatAdapter (
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val message = getItem(position)
-        val isUser = message.author == "user" //determina l'autore per applicare l'allineamento corretto alle bolle della chat
+        val isUser = message.author == AUTHOR_USER //determina l'autore per applicare l'allineamento corretto alle bolle della chat
 
         holder.binding.message = message
         holder.binding.executePendingBindings() //forza il re-layout immediato tramite Data Binding
+
+        holder.binding.authorLabel.setText(
+            when (message.author) {
+                AUTHOR_USER -> R.string.chat_author_user
+                AUTHOR_PARTNER -> R.string.chat_author_partner
+                else -> R.string.chat_author_assistant
+            }
+        )
 
         holder.binding.authorLabel.gravity = if (isUser) Gravity.END else Gravity.START
 
@@ -61,7 +75,13 @@ class ChatAdapter (
             holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.aac_on_primary_container))
         } else {
             val drawable = GradientDrawable().apply {
-                setColor(ContextCompat.getColor(context, R.color.aac_bubble_assistant))
+                //quello che ha detto l'altra persona su fondo grigio, i suggerimenti su fondo bianco
+                val bubbleColor = if (message.author == AUTHOR_PARTNER) {
+                    R.color.aac_surface_variant
+                } else {
+                    R.color.aac_bubble_assistant
+                }
+                setColor(ContextCompat.getColor(context, bubbleColor))
                 cornerRadii = floatArrayOf(
                     4f, 4f,
                     36f, 36f,
@@ -73,8 +93,8 @@ class ChatAdapter (
             holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.aac_on_surface))
         }
 
-        val textParams = holder.binding.messageText.layoutParams as ConstraintLayout.LayoutParams
-        textParams.horizontalBias = if (isUser) 1f else 0f
+        val textParams = holder.binding.messageText.layoutParams as LinearLayout.LayoutParams
+        textParams.gravity = if (isUser) Gravity.END else Gravity.START
         holder.binding.messageText.layoutParams = textParams
 
         val scrollView = holder.binding.pictogramScrollView
@@ -107,7 +127,7 @@ class ChatAdapter (
                         if (index > 0) marginStart = gap
                     }
                     scaleType = ImageView.ScaleType.FIT_CENTER
-                    contentDescription = null
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                     load(PictogramRepository.imageSource(context, id)) {
                         crossfade(true)
                         placeholder(R.drawable.ic_pictogram_placeholder)
@@ -118,7 +138,9 @@ class ChatAdapter (
                 strip.addView(image)
             }
 
-            strip.contentDescription = message.text
+            //per lo screen reader la striscia è un solo elemento, con la frase come descrizione
+            scrollView.contentDescription = context.getString(R.string.pictograms_of, message.text)
+            strip.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
 
             if (isUser) {
                 scrollView.post {
@@ -131,28 +153,36 @@ class ChatAdapter (
             }
         }
 
-        val star = holder.binding.favoriteStar
-
-        if (isUser || message.text.isBlank()) {
-            star.visibility = View.GONE
+        //Leggi e Salva compaiono solo sulle frasi suggerite, non su quelle scritte dall'utente
+        if (message.author != AUTHOR_MODEL || message.text.isBlank()) {
+            holder.binding.actionRow.visibility = View.GONE
         } else {
-            star.visibility = View.VISIBLE
+            holder.binding.actionRow.visibility = View.VISIBLE
+            holder.binding.speakButton.setOnClickListener { onSpeak(message) }
+
+            val save = holder.binding.saveButton
             val saved = isFavorite(message.text)
 
-            star.setImageResource(
-                if (saved) android.R.drawable.btn_star_big_on
-                else android.R.drawable.btn_star_big_off
+            //lo stato si legge nella parola, non solo nell'icona
+            save.setText(if (saved) R.string.action_saved else R.string.action_save)
+            save.setIconResource(
+                if (saved) R.drawable.ic_star_filled
+                else R.drawable.ic_star
             )
-            star.imageTintList = null
-            star.contentDescription = context.getString(
-                if (saved) R.string.favorite_deleted else R.string.favorite_added
+
+            //contorno per l'azione ancora da fare, riempimento tenue quando è già fatta
+            save.backgroundTintList = ColorStateList.valueOf(
+                if (saved) ContextCompat.getColor(context, R.color.aac_primary_container)
+                else Color.TRANSPARENT
             )
-            star.setOnClickListener { onToggleFavorite(message.text, message.pictogramIds) }
+            save.strokeWidth = if (saved) 0 else holder.saveStrokeWidth
+
+            save.setOnClickListener { onToggleFavorite(message.text, message.pictogramIds) }
         }
     }
 
-    fun refreshStars() {
-        notifyItemRangeChanged(0, itemCount) //aggiorna esclusivamente le viste visibili ricaricando lo stato corrente del pulsante "preferito"
+    fun refreshSavedState() {
+        notifyItemRangeChanged(0, itemCount) //aggiorna esclusivamente le viste visibili ricaricando lo stato corrente del pulsante Salva
     }
 
     fun updateMessages(newMessages: List<ChatMessage>, onCommit: () -> Unit = {}) {

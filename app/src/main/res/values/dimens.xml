@@ -6,4 +6,19 @@
     <dimen name="pictogram_strip_gap">6dp</dimen>
     <dimen name="pictogram_favorite_size">48dp</dimen>
     <dimen name="pictogram_favorite_gap">8dp</dimen>
+    <dimen name="pictogram_context_size">52dp</dimen>
+    <dimen name="context_color_bar_width">6dp</dimen>
+    <dimen name="touch_target_min">48dp</dimen>
+    <dimen name="action_button_min">52dp</dimen>
+    <!-- un solo raggio per card, campi e bottoni grandi -->
+    <dimen name="card_corner">14dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="card_gap">12dp</dimen>
+    <dimen name="screen_margin">16dp</dimen>
+    <!-- le liste stanno più strette perché le loro card hanno già il contorno -->
+    <dimen name="list_margin">14dp</dimen>
+    <!-- tavola di pittogrammi: due righe visibili, il resto scorre -->
+    <dimen name="board_height">200dp</dimen>
+    <dimen name="board_tile_width">88dp</dimen>
+    <dimen name="board_pictogram_size">56dp</dimen>
 </resources>

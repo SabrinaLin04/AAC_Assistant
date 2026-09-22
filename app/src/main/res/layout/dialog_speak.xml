@@ -11,7 +11,7 @@
         android:background="@color/aac_surface_container"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="@dimen/card_padding">
 
         <HorizontalScrollView
             android:id="@+id/pictogramScroll"
@@ -37,11 +37,9 @@
             android:id="@+id/speakText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="@dimen/card_padding"
             android:gravity="center"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:textAppearance="@style/TextAppearance.App.Display" />
 
     </LinearLayout>
 </ScrollView>

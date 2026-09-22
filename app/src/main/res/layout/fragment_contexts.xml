@@ -8,54 +8,111 @@
             type="it.lbsl.aacassistant.ContextsViewModel" />
     </data>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/contextsRecycler"
-            android:layout_width="0dp"
+        <include
+            android:id="@+id/hintBarInclude"
+            layout="@layout/include_hint_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="14dp"
+            android:layout_marginTop="12dp" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:isVisible="@{!viewModel.isLoading}"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:layout_weight="1">
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/contextsRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                app:isVisible="@{!viewModel.isLoading}"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                app:isVisible="@{viewModel.isLoading}" />
+
+            <TextView
+                android:id="@+id/emptyState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="@string/contexts_empty"
+                android:textAppearance="@style/TextAppearance.App.Body"
+                app:isVisible="@{viewModel.showEmptyState}" />
+
+        </FrameLayout>
+
+        <!-- frasi pronte: dirle non richiede di scegliere prima un posto.
+             Il pulsante per aggiungere un posto sta alla loro destra, in basso -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:isVisible="@{viewModel.isLoading}"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/list_margin"
+            android:paddingTop="12dp">
 
-        <TextView
-            android:id="@+id/emptyState"
-            android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/quick_phrases_title"
+                    android:textAppearance="@style/TextAppearance.App.Caption"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/quickChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:chipSpacingHorizontal="8dp"
+                    app:singleLine="false" />
+
+            </LinearLayout>
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fabAddContext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="12dp"
+                android:contentDescription="@string/add_context_title"
+                android:src="@drawable/ic_add" />
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/writeOwnButton"
+            style="@style/Widget.AAC.Button.Outlined"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="32dp"
-            android:gravity="center"
-            android:textAppearance="@style/TextAppearance.App.Caption"
-            android:text="@string/contexts_empty"
-            app:isVisible="@{viewModel.showEmptyState}"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:layout_marginHorizontal="@dimen/list_margin"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            android:minHeight="56dp"
+            android:text="@string/action_write_own"
+            app:icon="@drawable/ic_edit"
+            app:iconGravity="textStart" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabAddContext"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:contentDescription="@string/add_context_title"
-            android:src="@android:drawable/ic_input_add"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 </layout>

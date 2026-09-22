@@ -38,23 +38,42 @@ class FirestoreRepository {
         if (contexts().limit(1).get().await().isEmpty.not()) return
 
         val defaults = listOf(
-            "Pasto" to "Sono a tavola con altre persone. Voglio poter chiedere quello che desidero, rifiutare quello che non voglio, dire quando ho finito e commentare quello che sto mangiando. Voglio anche poter fare domande a chi è con me.",
+            //pittogrammi presi da assets/indice.json: "pasto" e "visita" non ci sono, si usano mangiare e dottore
+            Triple("Pasto", "Sono a tavola con altre persone. Voglio poter chiedere quello che desidero, rifiutare quello che non voglio, dire quando ho finito e commentare quello che sto mangiando. Voglio anche poter fare domande a chi è con me.", 2349),
 
-            "Visita medica" to "Sono dal medico. Voglio poter dire dove e quanto mi fa male, rispondere alle domande che mi vengono fatte, chiedere cosa sta succedendo e dire quando qualcosa mi spaventa o non voglio farlo.",
+            Triple("Visita medica", "Sono dal medico. Voglio poter dire dove e quanto mi fa male, rispondere alle domande che mi vengono fatte, chiedere cosa sta succedendo e dire quando qualcosa mi spaventa o non voglio farlo.", 2467),
 
-            "Scuola" to "Sono a scuola con i compagni e l'insegnante. Voglio poter chiedere aiuto, dire quando non ho capito, chiedere di andare in bagno, dire quando ho finito e partecipare a quello che succede in classe.",
+            Triple("Scuola", "Sono a scuola con i compagni e l'insegnante. Voglio poter chiedere aiuto, dire quando non ho capito, chiedere di andare in bagno, dire quando ho finito e partecipare a quello che succede in classe.", 3082),
 
-            "Casa" to "Sono a casa con la mia famiglia. Voglio poter chiedere le cose che mi servono, dire di no a quello che non voglio fare, raccontare come mi sento e chiedere di fare qualcosa insieme."
+            Triple("Casa", "Sono a casa con la mia famiglia. Voglio poter chiedere le cose che mi servono, dire di no a quello che non voglio fare, raccontare come mi sento e chiedere di fare qualcosa insieme.", 2317)
         )
 
-        defaults.forEach { (name, description)  -> addContext(name, description)}
+        defaults.forEachIndexed { index, (name, description, pictogramId) ->
+            addContext(name, description, colorIndex = index, pictogramId = pictogramId)
+        }
     }
-    suspend fun addFavorite(text: String, pictogramIds: List<Int> = emptyList()) : String {
-        return favorites().add(Favorite(text = text, pictogramIds = pictogramIds)).await().id
+    suspend fun addFavorite(
+        text: String,
+        pictogramIds: List<Int> = emptyList(),
+        contextId: String? = null
+    ) : String {
+        val favorite = Favorite(text = text, pictogramIds = pictogramIds, contextId = contextId)
+        return favorites().add(favorite).await().id
     }
 
-    suspend fun addContext(name: String, description: String) : String {
-        return contexts().add(UserContext(name = name, description = description)).await().id
+    suspend fun addContext(
+        name: String,
+        description: String,
+        colorIndex: Int? = null,
+        pictogramId: Int? = null
+    ) : String {
+        val context = UserContext(
+            name = name,
+            description = description,
+            colorIndex = colorIndex,
+            pictogramId = pictogramId
+        )
+        return contexts().add(context).await().id
     }
 
     suspend fun getFavorites() : List<Favorite> =
@@ -72,6 +91,10 @@ class FirestoreRepository {
 
     suspend fun updateContext(contextId: String, name: String, description: String) {
         contexts().document(contextId).update(mapOf("name" to name, "description" to description)).await()
+    }
+
+    suspend fun setContextPictogram(contextId: String, pictogramId: Int?) {
+        contexts().document(contextId).update("pictogramId", pictogramId).await()
     }
 
     suspend fun setActiveContext(contextId: String?) {
@@ -92,6 +115,28 @@ class FirestoreRepository {
             db.collection("users").document(currentUid)
                 .collection("settings").document("prompts")
         }
+
+    private fun hintsDoc(): DocumentReference? =
+        auth.currentUser?.uid?.let { currentUid ->
+            db.collection("users").document(currentUid)
+                .collection("settings").document("hints")
+        }
+
+    //un campo per aiuto, messo a true quando l'utente tocca "Ho capito"
+    fun observeDismissedHints(onChange: (Set<String>) -> Unit): ListenerRegistration? {
+        val doc = hintsDoc() ?: return null
+        return doc.addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            val dismissed = snapshot?.data.orEmpty()
+                .filterValues { it == true }
+                .keys
+            onChange(dismissed)
+        }
+    }
+
+    fun dismissHint(key: String) {
+        hintsDoc()?.set(mapOf(key to true), SetOptions.merge())
+    }
 
     fun savePrompts(config: PromptConfig, onDone: (Boolean) -> Unit) {
         val doc = promptsDoc() ?: run { onDone(false); return }

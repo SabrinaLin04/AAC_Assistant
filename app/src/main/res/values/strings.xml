@@ -4,7 +4,7 @@
     <string name="app_name">AAC Assistant</string>
 
     <string name="title_suggest">Assistente CAA</string>
-    <string name="title_favorites">Preferiti</string>
+    <string name="title_favorites">Le mie frasi</string>
     <string name="title_contexts">Contesti</string>
     <string name="title_prompts">Prompt AI</string>
     <string name="action_logout">Esci</string>
@@ -17,17 +17,13 @@
     <string name="error_title">Qualcosa è andato storto</string>
     <string name="error_generation">Errore durante la generazione</string>
 
-    <string name="chat_input_hint">Scrivi una frase all\'infinito…</string>
     <string name="chat_send">Invia</string>
-    <string name="chat_author_user">Tu</string>
-    <string name="chat_author_assistant">Assistente</string>
+    <string name="chat_author_user">Vuoi dire</string>
+    <string name="chat_author_partner">Ti hanno detto</string>
+    <string name="chat_author_assistant">Puoi dire</string>
     <string name="chat_status_available">Disponibile</string>
     <string name="chat_status_generating">Generazione in corso…</string>
     <string name="chat_app_icon">Icona dell\'app</string>
-
-    <string name="favorite_added">Aggiunto ai preferiti</string>
-    <string name="favorite_removed">Rimosso dai preferiti</string>
-    <string name="favorite_deleted">Preferito eliminato</string>
 
     <string name="context_deleted">Contesto eliminato</string>
 
@@ -39,7 +35,7 @@
 
     <string name="delete_context_confirm_title">Eliminare contesto?</string>
     <string name="delete_context_confirm_message">Sei sicuro di voler eliminare il contesto "%1$s"?</string>
-    <string name="delete_favorite_confirm_title">Eliminare preferito?</string>
+    <string name="delete_favorite_confirm_title">Rimuovere la frase?</string>
     <string name="delete_favorite_confirm_message">Sei sicuro di voler eliminare la frase "%1$s"?</string>
 
     <string name="sign_in_cancelled">Accesso annullato</string>
@@ -51,12 +47,10 @@
     <string name="logout_confirm_title">Uscire dall\'account?</string>
     <string name="logout_confirm_message">Dovrai accedere di nuovo per usare l\'app.</string>
 
-    <string name="error_load_favorites">Impossibile caricare i preferiti</string>
+    <string name="error_load_favorites">Impossibile caricare le tue frasi</string>
     <string name="error_toggle_favorite">Operazione non riuscita</string>
     <string name="error_delete_favorite">Impossibile eliminare</string>
-    <string name="favorites_empty">Nessun preferito. Premi la stella su una frase per salvarla.</string>
-
-    <string name="action_toggle_favorite">Aggiungi ai preferiti</string>
+    <string name="favorites_empty">Qui trovi le frasi che salvi. Tocca Salva su una frase per tenerla.</string>
 
     <plurals name="favorite_usage_count">
         <item quantity="one">Usata %1$d volta</item>
@@ -88,16 +82,17 @@
     <string name="credits_gemma">Le frasi sono generate localmente sul dispositivo da Gemma 3, un modello di Google, utilizzato secondo i Gemma Terms of Use.</string>
     <string name="credits_gemma_link">https://ai.google.dev/gemma/terms</string>
 
+    <string name="credits_icons_title">Icone</string>
+    <string name="credits_icons">Le icone dell\'interfaccia sono Material Symbols di Google, distribuite con licenza Apache 2.0.</string>
+
     <string name="credits_privacy_title">Privacy</string>
-    <string name="credits_privacy">Le frasi generate durante l\'uso non lasciano mai il dispositivo. Solo i preferiti salvati esplicitamente vengono sincronizzati sul tuo account.</string>
+    <string name="credits_privacy">Le frasi generate durante l\'uso non lasciano mai il dispositivo. Solo le frasi salvate esplicitamente vengono sincronizzate sul tuo account.</string>
 
     <string name="credits_version">Versione %1$s</string>
     <string name="credits_arasaac_logo_desc">Logo ARASAAC</string>
     <string name="credits_arasaac_license_link">Licenza: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it</string>
 
     <string name="context_active">ATTIVO</string>
-    <string name="context_selected">Contesto attivo: %1$s</string>
-    <string name="context_deactivated">Contesto disattivato</string>
     <string name="context_none">Nessun contesto</string>
 
     <string name="action_suggest">Suggerisci frasi</string>
@@ -129,7 +124,77 @@
 
     <string name="model_switch_title">Seleziona modello</string>
     <string name="action_switch_model">Cambia modello</string>
+
+    <string name="action_speak">Leggi</string>
+    <string name="action_saved">Salvata</string>
+    <string name="action_remove">Rimuovi</string>
+    <string name="action_understood">Ho capito</string>
+    <string name="action_write_own">Scrivi tu una frase</string>
+
+    <string name="saved_in_my_phrases">Salvata in Le mie frasi</string>
+    <string name="removed_phrase">Rimossa</string>
+
+    <string name="contexts_title">Dove sei?</string>
+    <string name="hint_contexts">Tocca il posto dove sei.</string>
+    <string name="hint_write">Tocca i pittogrammi o scrivi due parole, poi invia.</string>
+    <string name="hint_speak">Tocca Leggi: il telefono dice la frase ad alta voce.</string>
+
+    <string name="quick_phrases_title">Frasi pronte</string>
+    <string-array name="quick_phrases">
+        <item>Mi serve aiuto</item>
+        <item>Ho dolore</item>
+        <item>Ho bisogno di stare da solo</item>
+    </string-array>
     <string name="model_switch_unavailable_message">Solo un modello disponibile: %1$s</string>
     <string name="model_switch_none">nessuno</string>
     <string name="model_switch_current">%1$s ✓</string>
+
+    <string name="profile_section_title">I tuoi dati</string>
+    <string name="profile_section_hint">Servono solo per ritrovare le tue frasi su un altro telefono.</string>
+    <string name="favorites_empty_title">Non hai ancora salvato frasi</string>
+    <string name="hint_favorites">Le frasi che salvi restano qui. Se tocchi Rimuovi, puoi ancora annullare subito dopo.</string>
+
+    <string name="mode_intention">Voglio dire</string>
+    <string name="mode_reply">Mi hanno detto</string>
+    <string name="input_hint_intention">Cosa vuoi dire?</string>
+    <string name="input_hint_reply">Cosa ti hanno detto?</string>
+    <string name="board_description">Pittogrammi da toccare per comporre la frase</string>
+    <string name="board_show">Mostra i pittogrammi</string>
+    <string name="board_hide">Scrivi con la tastiera</string>
+    <string name="erase_word">Cancella l\'ultima parola</string>
+    <string name="saved_here_title">Le tue frasi per questo posto</string>
+    <string name="pictograms_of">Pittogrammi: %1$s</string>
+    <string name="action_repeat">Ripeti</string>
+    <string name="speech_unavailable">Il telefono non ha la voce italiana: si installa da Impostazioni, Sintesi vocale.</string>
+    <string name="prompts_intention_title">Richiesta con quello che vuoi dire</string>
+    <string name="prompts_intention_hint">Usa {messaggio} come segnaposto per le parole scelte.</string>
+
+    <plurals name="context_phrase_count">
+        <item quantity="one">%1$d frase salvata</item>
+        <item quantity="other">%1$d frasi salvate</item>
+    </plurals>
+    <string name="edit_context_named">Modifica %1$s</string>
+
+    <string name="drawer_caregiver_section">Per chi assiste</string>
+    <string name="action_continue">Continua</string>
+    <string name="caregiver_confirm_title">Impostazioni per chi assiste</string>
+    <string name="caregiver_confirm_message">Queste impostazioni cambiano il modo in cui l\'app suggerisce le frasi. Vuoi continuare?</string>
+
+    <string name="title_guide">Guida per chi assiste</string>
+    <string name="guide_intro_title">A chi serve questa guida</string>
+    <string name="guide_intro">A chi prepara l\'app e accompagna la persona che la usa: un familiare, un educatore, un logopedista. Le impostazioni descritte qui non servono nell\'uso di tutti i giorni.</string>
+    <string name="guide_places_title">1. Preparare i posti</string>
+    <string name="guide_places">Ogni posto è una situazione: a tavola, dal medico, a scuola. Tocca + per aggiungerne uno e descrivilo in prima persona, come lo direbbe chi usa l\'app: \"Sono dal medico e voglio dire dove mi fa male\". Più la descrizione è concreta, più le frasi suggerite sono adatte. Il pittogramma viene scelto dal nome. Per modificare o eliminare un posto tocca la matita.</string>
+    <string name="guide_use_title">2. Come si usa</string>
+    <string name="guide_use">Si sceglie il posto, poi si compone il messaggio toccando i pittogrammi oppure scrivendo due parole. \"Voglio dire\" serve per esprimere qualcosa, \"Mi hanno detto\" per rispondere a chi ha parlato. Dopo l\'invio arrivano quattro frasi: Leggi le fa dire al telefono, Salva le tiene in Le mie frasi.</string>
+    <string name="guide_saved_title">3. Le frasi salvate</string>
+    <string name="guide_saved">Le frasi salvate in un posto compaiono per prime quando si torna lì. Vale la pena prepararle insieme: ci si orienta meglio con frasi che si conoscono già.</string>
+    <string name="guide_voice_title">4. Voce e dimensioni</string>
+    <string name="guide_voice">Se il telefono non parla, manca la voce italiana: si installa dalle impostazioni della sintesi vocale. Per pittogrammi e testi più grandi si usano le impostazioni di sistema per la dimensione del carattere e dello schermo: l\'app si adatta.</string>
+    <string name="guide_open_speech">Impostazioni della voce</string>
+    <string name="guide_open_display">Impostazioni dello schermo</string>
+    <string name="guide_help_title">5. Gli aiuti</string>
+    <string name="guide_help">Le strisce gialle spiegano ogni schermata la prima volta. Si chiudono con Ho capito e non ricompaiono più.</string>
+    <string name="guide_advanced_title">6. Impostazioni avanzate</string>
+    <string name="guide_advanced">Prompt AI e Cambia modello modificano il modo in cui nascono le frasi e chiedono una conferma, per evitare cambi per errore. Se in alto compare Modalità dimostrativa, il modello linguistico non è installato sul telefono e le frasi vengono da un elenco fisso.</string>
 </resources>

@@ -200,6 +200,13 @@ object PictogramRepository {
     }
 
 
+    //id dell'indice locale per le parole richieste, nell'ordine dato; quelle assenti vengono saltate
+    suspend fun indexIds(context: Context, words: List<String>): List<Pair<String, Int>> {
+        loadCoreIndex(context)
+        val idx = coreIndex ?: return emptyList()
+        return words.mapNotNull { word -> idx[word]?.let { word to it } }
+    }
+
     fun imageUrl(id: Int): String =
         "https://static.arasaac.org/pictograms/$id/${id}_300.png"
 
