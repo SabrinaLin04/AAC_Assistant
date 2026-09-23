@@ -96,7 +96,7 @@
     <string name="context_none">Nessun contesto</string>
 
     <string name="action_suggest">Suggerisci frasi</string>
-    <string name="demo_mode_banner">Modalità dimostrativa: frasi di esempio fisse, il modello non è installato</string>
+    <string name="demo_mode_banner">Modalità dimostrativa — modello non caricato</string>
 
     <string name="title_profile">Profilo</string>
     <string name="profile_display_name">Nome visualizzato</string>

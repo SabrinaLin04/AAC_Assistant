@@ -16,12 +16,15 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.snackbar.Snackbar
 
+//i pulsanti dei dialog: pieno quello principale, contornato l'altro, tutti grandi da toccare
 fun AlertDialog.styleCustomButtons(
     positiveColorRes: Int = R.color.aac_primary,
     positiveTextColorRes: Int = R.color.aac_on_primary
@@ -73,7 +76,7 @@ fun AlertDialog.styleCustomButtons(
     }
 }
 
-//mostra un dialog di conferma personalizzato con uno stile grafico coerente per le azioni di eliminazione o disconnessione
+//chiede conferma prima di un'azione che non si può annullare
 fun Context.showConfirmationDialog(
     title: String,
     message: String,
@@ -143,8 +146,7 @@ class SpeakDialog internal constructor(
 
         //il motore vocale pronuncia "d'acqua" come una parola sola, mentre il pittogramma
         //è associato ad "acqua": si confrontano le parole contenute, non l'intero intervallo
-        val spoken = text.substring(range.first, range.last + 1).lowercase()
-        val words = spoken.split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }
+        val words = wordsOf(text.substring(range.first, range.last + 1))
         val match = shown.firstOrNull { (pictogram, _) -> pictogram.word in words } ?: return
 
         speakText.text = SpannableString(text).apply {
@@ -193,7 +195,6 @@ fun Context.showSpeakDialog(
     val row = view.findViewById<LinearLayout>(R.id.pictogramRow)
     val scroll = view.findViewById<HorizontalScrollView>(R.id.pictogramScroll)
 
-    row.removeAllViews()
     val shown = mutableListOf<Pair<WordPictogram, ImageView>>()
 
     if (pictograms.isEmpty()) {
@@ -249,6 +250,24 @@ fun Context.showSpeakDialog(
         highlightColor = ContextCompat.getColor(this, R.color.aac_highlight),
         onHighlightColor = ContextCompat.getColor(this, R.color.aac_on_highlight)
     )
+}
+
+//scorrere una riga di lato la elimina: la conferma la chiede la schermata che usa la lista
+fun RecyclerView.onSwipe(onSwiped: (position: Int) -> Unit) {
+    val callback = object : ItemTouchHelper.SimpleCallback(
+        0,
+        ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+    ) {
+        override fun onMove(
+            rv: RecyclerView,
+            vh: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ) = false
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) =
+            onSwiped(viewHolder.bindingAdapterPosition)
+    }
+    ItemTouchHelper(callback).attachToRecyclerView(this)
 }
 
 //colori della barra che permette di annullare una cancellazione, uguali in tutte le schermate

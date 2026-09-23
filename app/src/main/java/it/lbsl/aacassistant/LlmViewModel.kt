@@ -132,7 +132,14 @@ class LlmViewModel : ViewModel() {
     private var promptConfig = PromptConfig()
     private var promptsRegistration: ListenerRegistration? = null
 
-    //inizializza il modello linguistico copiando il file se mancante e avviando il motore o passando alla modalità demo in caso di errore
+    //modelli presenti sul telefono e quello in uso, serve al menu "Cambia modello"
+    val availableModels: List<ModelInfo>
+        get() = engineProvider?.discoverModels() ?: emptyList()
+
+    val currentModel: ModelInfo?
+        get() = engineProvider?.selected
+
+    //cerca un modello sul telefono e lo avvia; se non c'è o non parte si resta in modalità demo
     fun loadModel(context: Context) {
         val appCtx = context.applicationContext
         appContext = appCtx
@@ -162,16 +169,10 @@ class LlmViewModel : ViewModel() {
             }
 
             try {
-                _modelState.value = ModelState.Initializing(R.string.model_copying)
-                val modelPath = withContext(Dispatchers.IO) { provider.prepareModel(model) }
-
-                if (modelPath == null) {
+                if (!startEngine(model, appCtx, provider)) {
                     Log.w(TAG, "copia di ${model.filename} non riuscita, avvio in modalità demo")
                     _modelState.value = ModelState.DemoMode
-                    return@launch
                 }
-
-                loadEngine(modelPath, appCtx, model)
             } catch (e: Exception) {
                 //un fallimento del motore è altrimenti indistinguibile dall'assenza del modello
                 Log.e(TAG, "inizializzazione di ${model.label} fallita", e)
@@ -180,7 +181,20 @@ class LlmViewModel : ViewModel() {
         }
     }
 
-    //costruisce le istruzioni di sistema per il modello integrando la descrizione del contesto attuale se disponibile
+    //copia il file del modello se non è ancora in filesDir e accende il motore.
+    //Restituisce falso quando il file non si trova da nessuna parte
+    private suspend fun startEngine(
+        model: ModelInfo,
+        context: Context,
+        provider: LlmEngineProvider
+    ): Boolean {
+        _modelState.value = ModelState.Initializing(R.string.model_copying)
+        val modelPath = withContext(Dispatchers.IO) { provider.prepareModel(model) } ?: return false
+        loadEngine(modelPath, context, model)
+        return true
+    }
+
+    //istruzioni di sistema per il modello, con il posto in cui ci si trova come sfondo
     private fun buildSystemPrompt(): String {
         val base = promptConfig.systemPrompt
 
@@ -190,7 +204,7 @@ class LlmViewModel : ViewModel() {
             ?: base
     }
 
-    //seleziona un set di frasi preimpostate per la modalità demo in base alla parola chiave del contesto attivo
+    //frasi pronte per la modalità demo, scelte dalla parola chiave del posto in cui ci si trova
     private fun pickDemoSuggestions(): List<String> {
         if (pendingInput?.kind == InputKind.REPLY) return DEMO_REPLIES
         val ctx = contextDescription?.lowercase() ?: return DEMO_FALLBACK
@@ -200,7 +214,7 @@ class LlmViewModel : ViewModel() {
             ?: DEMO_FALLBACK
     }
 
-    //chiude l'eventuale conversazione precedente e ne avvia una nuova configurando il prompt di sistema e i parametri di campionamento
+    //apre una conversazione nuova: è l'unico momento in cui il modello legge le istruzioni di sistema
     private fun createConversation() {
         val eng = engine ?: return
 
@@ -218,7 +232,7 @@ class LlmViewModel : ViewModel() {
         conversation = eng.createConversation(convConfig)
     }
 
-    //carica e inizializza il motore litert in un thread secondario specificando il percorso del modello e l'uso della gpu
+    //accende il motore fuori dal thread principale: l'inizializzazione dura qualche secondo
     private suspend fun loadEngine(modelPath: String, context: Context, model: ModelInfo) {
         _modelState.value = ModelState.Initializing(R.string.model_initializing)
 
@@ -238,12 +252,10 @@ class LlmViewModel : ViewModel() {
         _modelState.value = ModelState.Ready
     }
 
-    //analizza la frase filtrando le stopword per trovare e restituire fino a dieci identificatori di pittogrammi univoci corrispondenti
-    //le parole assenti dall'indice locale richiedono una chiamata di rete, quindi si risolvono in parallelo
-    private suspend fun findPictogramsFor(sentence: String): List<WordPictogram> = coroutineScope {
-        val words = sentence
-            .lowercase()
-            .split(Regex("[^\\p{L}]+"))
+    //cerca un pittogramma per ogni parola della frase, saltando articoli e preposizioni.
+    //Le parole che non sono nell'indice locale richiedono la rete, quindi si cercano tutte insieme
+    suspend fun pictogramsFor(sentence: String): List<WordPictogram> = coroutineScope {
+        val words = wordsOf(sentence)
             .filter { it.length >= 2 && it !in STOPWORDS }
             .take(20)
 
@@ -266,10 +278,7 @@ class LlmViewModel : ViewModel() {
             .take(10)
     }
 
-    //stessa ricerca usata per i messaggi, per le frasi pronte che nascono già scritte
-    suspend fun pictogramsFor(text: String): List<WordPictogram> = findPictogramsFor(text)
-
-    //aggiorna la descrizione del contesto corrente svuotando la cronologia dei messaggi e ricreando la conversazione per applicare le modifiche
+    //cambia il posto in cui ci si trova: la chat riparte da zero perché cambiano le istruzioni al modello
     fun setContext(name: String?, description: String?) {
         //il nome serve solo alle metriche, si aggiorna anche a descrizione invariata
         contextName = name
@@ -295,7 +304,7 @@ class LlmViewModel : ViewModel() {
         viewModelScope.launch {
             pendingInput = PendingInput(text, kind)
             val author = if (kind == InputKind.REPLY) AUTHOR_PARTNER else AUTHOR_USER
-            val pictograms = findPictogramsFor(text)
+            val pictograms = pictogramsFor(text)
             _messages.value = _messages.value.orEmpty() + ChatMessage(author, text, pictograms)
             generateSuggestions()
         }
@@ -310,8 +319,6 @@ class LlmViewModel : ViewModel() {
 
     //genera quattro frasi col modello, oppure le prende da quelle preimpostate in modalità demo
     private suspend fun generateSuggestions() {
-        _chatState.value = ChatState.Generating
-
         if (_modelState.value is ModelState.DemoMode) {
             delay(600)
             publishSuggestions(pickDemoSuggestions())
@@ -326,6 +333,7 @@ class LlmViewModel : ViewModel() {
         }
 
         pendingInput = null
+        //se la generazione è fallita lo stato è già Error e non va sovrascritto
         if (_chatState.value is ChatState.Generating) {
             _chatState.value = ChatState.Idle
         }
@@ -378,8 +386,11 @@ class LlmViewModel : ViewModel() {
         )
     }
 
+    //una riga di misure per ogni generazione riuscita
     private suspend fun logMetrics(generation: Generation) {
         val logger = metricsLogger ?: return
+        //una generazione fallita non ha prodotto niente: non è una misura
+        if (generation.chunks == 0) return
         val model = engineProvider?.selected
 
         val entry = MetricsEntry(
@@ -389,7 +400,7 @@ class LlmViewModel : ViewModel() {
             nChars = generation.text.length,
             nChunks = generation.chunks,
             charPerSec = if (generation.totalMs > 0) {
-                generation.chunks * 1000.0 / generation.totalMs
+                generation.text.length * 1000.0 / generation.totalMs
             } else {
                 0.0
             },
@@ -425,10 +436,10 @@ class LlmViewModel : ViewModel() {
 
         //ogni frase cerca i propri pittogrammi, le quattro ricerche procedono insieme
         val newMessages = suggestions
-            .map { text -> async { ChatMessage(AUTHOR_MODEL, text, findPictogramsFor(text)) } }
+            .map { text -> async { ChatMessage(AUTHOR_MODEL, text, pictogramsFor(text)) } }
             .awaitAll()
 
-        //se c'è una frase la mantiene
+        //le risposte a un messaggio si aggiungono alla chat; i suggerimenti chiesti da soli la sostituiscono
         _messages.value = if (pendingInput != null) {
             _messages.value.orEmpty() + newMessages
         } else {
@@ -436,6 +447,7 @@ class LlmViewModel : ViewModel() {
         }
     }
 
+    //spegne il motore in uso e ne accende un altro, ripartendo da una chat vuota
     fun switchModel(model: ModelInfo) {
         val provider = engineProvider ?: return
         val ctx = appContext ?: return
@@ -444,26 +456,15 @@ class LlmViewModel : ViewModel() {
             _modelState.value = ModelState.Initializing(R.string.model_initializing)
             _messages.value = emptyList()
             _chatState.value = ChatState.Idle
-
-            withContext(Dispatchers.IO) {
-                conversation?.close()
-                conversation = null
-                engine?.close()
-                engine = null
-            }
-
-            val path = withContext(Dispatchers.IO) {
-                provider.prepareModel(model)
-            }
-
-            if (path == null) {
-                _modelState.value = ModelState.DemoMode
-                return@launch
-            }
+            closeEngine()
 
             try {
-                loadEngine(path, ctx, model)
+                if (!startEngine(model, ctx, provider)) {
+                    Log.w(TAG, "${model.filename} non trovato, si resta in modalità demo")
+                    _modelState.value = ModelState.DemoMode
+                }
             } catch (e: Exception) {
+                Log.e(TAG, "passaggio a ${model.label} fallito", e)
                 _modelState.value = ModelState.Error(
                     messageRes = R.string.error_generation,
                     detail = e.localizedMessage
@@ -472,12 +473,12 @@ class LlmViewModel : ViewModel() {
         }
     }
 
-    // esponi la lista dei modelli disponibili per la UI
-    val availableModels: List<ModelInfo>
-        get() = engineProvider?.discoverModels() ?: emptyList()
-
-    val currentModel: ModelInfo?
-        get() = engineProvider?.selected
+    private suspend fun closeEngine() = withContext(Dispatchers.IO) {
+        conversation?.close()
+        conversation = null
+        engine?.close()
+        engine = null
+    }
 
     fun clearChatError() {
         if (_chatState.value is ChatState.Error) {

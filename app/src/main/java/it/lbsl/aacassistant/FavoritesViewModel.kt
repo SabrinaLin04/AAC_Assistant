@@ -104,8 +104,8 @@ class FavoritesViewModel : ViewModel() {
         }
     }
 
-    fun isFavorite(text: String) : Boolean =
-        _favorites.value?.any {it.text == text} == true
+    fun isFavorite(text: String): Boolean =
+        _favorites.value?.any { it.text == text } == true
 
     //frasi salvate in un posto, già ordinate per uso
     fun phrasesFor(contextId: String): List<Favorite> =
@@ -117,7 +117,6 @@ class FavoritesViewModel : ViewModel() {
             .mapNotNull { it.contextId }
             .groupingBy { it }
             .eachCount()
-
 
     fun clearError() {
         _errorMessage.value = null

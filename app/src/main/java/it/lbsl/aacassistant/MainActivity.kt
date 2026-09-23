@@ -53,13 +53,13 @@ class MainActivity : AppCompatActivity() {
         setupDrawerBack()
         schedulePictogramPrefetch()
 
-        //il modello si carica all'avvio, mentre l'utente sceglie il contesto nella schermata iniziale
+        //il modello si carica all'avvio, mentre si sceglie il posto nella schermata iniziale
         if (llmViewModel.modelState.value is ModelState.Idle) {
             llmViewModel.loadModel(applicationContext)
         }
     }
 
-    //pianifica un task in background per precaricare i pittogrammi quando il dispositivo è connesso a internet per ottimizzare le prestazioni
+    //scarica i pittogrammi più comuni appena c'è rete, così poi si vedono anche offline
     private fun schedulePictogramPrefetch() {
         val prefetch = OneTimeWorkRequestBuilder<PictogramPrefetchWorker>()
             .setConstraints(
@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //configura il sistema di navigazione collegando il nav controller alla toolbar e al menu laterale per gestire gli spostamenti tra i vari fragment
+    //collega barra in alto e menu laterale alla navigazione fra le schermate
     private fun setupNavigation() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -111,8 +111,7 @@ class MainActivity : AppCompatActivity() {
             false
         }
 
-        //listener per ogni cambio di destinazione, abilita la chiusura automatica del drawer
-        //una volta selezionata una nuova destinazione
+        //cambiata schermata, il cassetto si chiude e segna la voce giusta
         navController.addOnDestinationChangedListener { _, destination, _ ->
             binding.drawerMenuView.setCheckedItem(destination.id)
             if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
@@ -237,7 +236,7 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean(KEY_CAREGIVER_CONFIRMED, caregiverConfirmed)
     }
 
-    //crea e mostra un dialog di conferma per l'uscita dall'account
+    //uscire dall'account è un'azione da confermare
     private fun confirmLogout() {
         showConfirmationDialog(
             title = getString(R.string.logout_confirm_title),
@@ -248,7 +247,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    //esegue la disconnessione dell'utente tramite firebase auth e lo reindirizza alla schermata di benvenuto ripulendo lo stack di navigazione
+    //dopo l'uscita si torna alla schermata di benvenuto, senza poter tornare indietro
     private fun logout() {
         AuthUI.getInstance()
             .signOut(this)

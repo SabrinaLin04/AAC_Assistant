@@ -16,7 +16,7 @@ data class MetricsEntry(
     @SerializedName("context_id") val contextId: String
 )
 
-//gestisce la creazione della cartella e la scrittura dei log
+//registra i tempi di ogni generazione per le misure della tesi
 class MetricsLogger(filesDir: File) {
     private val metricsDir = File(filesDir, "metrics").apply { mkdirs() }
     private val gson = Gson()

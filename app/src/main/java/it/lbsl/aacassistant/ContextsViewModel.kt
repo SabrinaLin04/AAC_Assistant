@@ -1,15 +1,19 @@
 package it.lbsl.aacassistant
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
-class ContextsViewModel : ViewModel() {
+class ContextsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = FirestoreRepository()
+
+    //serve a cercare i pittogrammi nell'indice locale invece che in rete
+    private val appContext get() = getApplication<Application>()
 
     private val _contexts = MutableLiveData<List<UserContext>>(emptyList())
     val contexts: LiveData<List<UserContext>> = _contexts
@@ -32,7 +36,7 @@ class ContextsViewModel : ViewModel() {
         addSource(_isLoading) { update() }
     }
 
-    //si ricalcola anche quando cambia la lista, così un contesto modificato arriva aggiornato ai suggerimenti
+    //si ricalcola anche quando cambia la lista: un posto rinominato arriva aggiornato alla chat
     val activeContext: LiveData<UserContext?> = MediatorLiveData<UserContext?>().apply {
         fun update() {
             value = _contexts.value?.firstOrNull { it.id == _activeContextId.value }
@@ -49,7 +53,7 @@ class ContextsViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                repository.defaultContexts()
+                repository.createDefaultContexts()
                 _contexts.value = repository.getContexts().sortedBy { it.name }
                 _activeContextId.value = repository.getActiveContextId()
             } catch (e: Exception) {
@@ -110,7 +114,7 @@ class ContextsViewModel : ViewModel() {
         }
     }
 
-    //imposta il contesto attivo, null significa nessun contesto
+    //sceglie il posto in cui ci si trova; null vuol dire nessuno di quelli in elenco
     fun activateContext(contextId: String?) {
         //aggiorno subito il valore locale: la schermata dei suggerimenti si apre
         //nello stesso momento e deve già mostrare il posto scelto
@@ -127,12 +131,11 @@ class ContextsViewModel : ViewModel() {
         }
     }
 
-    //cerca un pittogramma per il nome del contesto, fermandosi alla prima parola che ne ha uno
+    //cerca un pittogramma per il nome del posto, fermandosi alla prima parola che ne ha uno
     private suspend fun pictogramForName(name: String): Int? =
-        name.lowercase()
-            .split(Regex("[^\\p{L}]+"))
+        wordsOf(name)
             .filter { it.length >= 2 && it !in STOPWORDS }
-            .firstNotNullOfOrNull { PictogramRepository.findPictogram(it) }
+            .firstNotNullOfOrNull { PictogramRepository.findPictogram(appContext, it) }
 
     fun clearError() {
         _errorMessage.value = null

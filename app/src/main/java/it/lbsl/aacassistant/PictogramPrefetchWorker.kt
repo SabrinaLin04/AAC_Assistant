@@ -12,14 +12,14 @@ class PictogramPrefetchWorker(context: Context, params: WorkerParameters)
     : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
 
-        //recupera gli identificatori dei pittogrammi principali dal repository e termina subito l'operazione in caso di lista vuota
+        //i pittogrammi delle parole più comuni, scaricati una volta per averli anche senza rete
         val ids = PictogramRepository.coreIds(applicationContext)
         if (ids.isEmpty()) return@withContext Result.success()
 
         val dir = PictogramRepository.pictogramDir(applicationContext)
         var failures = 0
 
-        //scorre gli id ed esegue il download dell'immagine in un file temporaneo, per poi rinominarlo solo a download completato evitando file corrotti
+        //prima in un file temporaneo e poi rinominato: un download interrotto non lascia immagini rotte
         ids.forEach { id ->
             val file = File(dir, "$id.png")
             if (file.exists()) return@forEach
@@ -34,7 +34,7 @@ class PictogramPrefetchWorker(context: Context, params: WorkerParameters)
             }
         }
 
-        //comunica al work manager di riprogrammare l'esecuzione del task solo se tutti i tentativi di download delle immagini sono falliti
+        //se non ne è arrivato nemmeno uno probabilmente manca la rete: si riprova più tardi
         if (failures == ids.size) Result.retry() else Result.success()
     }
 }

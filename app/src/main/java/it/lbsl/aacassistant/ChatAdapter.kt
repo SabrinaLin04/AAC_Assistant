@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -21,7 +22,7 @@ class ChatAdapter (
     private val onToggleFavorite: (ChatMessage) -> Unit = { },
     private val onPictogramsClick: (ChatMessage) -> Unit = { },
     private val onSpeak: (ChatMessage) -> Unit = { }
-) : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(ChatMessageDiffCallback()) {
+) : ListAdapter<ChatMessage, ChatAdapter.ChatViewHolder>(DIFF) {
 
     class ChatViewHolder(val binding: ItemChatMessageBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -39,10 +40,10 @@ class ChatAdapter (
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val message = getItem(position)
-        val isUser = message.author == AUTHOR_USER //determina l'autore per applicare l'allineamento corretto alle bolle della chat
+        val isUser = message.author == AUTHOR_USER
 
         holder.binding.message = message
-        holder.binding.executePendingBindings() //forza il re-layout immediato tramite Data Binding
+        holder.binding.executePendingBindings()
 
         holder.binding.authorLabel.setText(
             when (message.author) {
@@ -52,150 +53,138 @@ class ChatAdapter (
             }
         )
 
-        holder.binding.authorLabel.gravity = if (isUser) Gravity.END else Gravity.START
+        alignToSpeaker(holder, isUser)
+        bindBubble(holder, message, isUser)
+        bindPictograms(holder, message, isUser)
+        bindActions(holder, message)
+    }
 
-        val params = holder.binding.bubbleColumn.layoutParams
-                as LinearLayout.LayoutParams
-        params.gravity = if (isUser) Gravity.END else Gravity.START
-        holder.binding.bubbleColumn.layoutParams = params
+    //quello che dice l'utente sta a destra, quello che arriva dagli altri a sinistra
+    private fun alignToSpeaker(holder: ChatViewHolder, isUser: Boolean) {
+        val side = if (isUser) Gravity.END else Gravity.START
 
+        holder.binding.authorLabel.gravity = side
+        holder.binding.pictogramStrip.gravity = side or Gravity.CENTER_VERTICAL
+
+        listOf(
+            holder.binding.bubbleColumn,
+            holder.binding.messageText,
+            holder.binding.pictogramScrollView
+        ).forEach { view ->
+            val params = view.layoutParams as LinearLayout.LayoutParams
+            params.gravity = side
+            view.layoutParams = params
+        }
+    }
+
+    //la bolla ha l'angolo squadrato dalla parte di chi parla, come nelle app di messaggi
+    private fun bindBubble(holder: ChatViewHolder, message: ChatMessage, isUser: Boolean) {
         val context = holder.itemView.context
 
-        if (isUser) {
-            val drawable = GradientDrawable().apply {
-                setColor(ContextCompat.getColor(context, R.color.aac_bubble_user))
-                cornerRadii = floatArrayOf(
-                    36f, 36f,
-                    36f, 36f,
-                    4f, 4f,
-                    36f, 36f
-                )
-            }
-            holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.aac_on_primary_container))
-        } else {
-            val drawable = GradientDrawable().apply {
-                //quello che ha detto l'altra persona su fondo grigio, i suggerimenti su fondo bianco
-                val bubbleColor = if (message.author == AUTHOR_PARTNER) {
-                    R.color.aac_surface_variant
-                } else {
-                    R.color.aac_bubble_assistant
-                }
-                setColor(ContextCompat.getColor(context, bubbleColor))
-                cornerRadii = floatArrayOf(
-                    4f, 4f,
-                    36f, 36f,
-                    36f, 36f,
-                    36f, 36f
-                )
-            }
-            holder.binding.messageText.background = drawable
-            holder.binding.messageText.setTextColor(ContextCompat.getColor(context, R.color.aac_on_surface))
+        //quello che ha detto l'altra persona su fondo grigio, i suggerimenti su fondo bianco
+        val bubbleColor = when {
+            isUser -> R.color.aac_bubble_user
+            message.author == AUTHOR_PARTNER -> R.color.aac_surface_variant
+            else -> R.color.aac_bubble_assistant
         }
 
-        val textParams = holder.binding.messageText.layoutParams as LinearLayout.LayoutParams
-        textParams.gravity = if (isUser) Gravity.END else Gravity.START
-        holder.binding.messageText.layoutParams = textParams
+        holder.binding.messageText.background = GradientDrawable().apply {
+            setColor(ContextCompat.getColor(context, bubbleColor))
+            //angoli in senso orario a partire da quello in alto a sinistra
+            cornerRadii = if (isUser) {
+                floatArrayOf(36f, 36f, 36f, 36f, 4f, 4f, 36f, 36f)
+            } else {
+                floatArrayOf(4f, 4f, 36f, 36f, 36f, 36f, 36f, 36f)
+            }
+        }
+        holder.binding.messageText.setTextColor(
+            ContextCompat.getColor(
+                context,
+                if (isUser) R.color.aac_on_primary_container else R.color.aac_on_surface
+            )
+        )
+    }
 
+    //striscia dei pittogrammi sotto la frase, toccandola la frase viene letta
+    private fun bindPictograms(holder: ChatViewHolder, message: ChatMessage, isUser: Boolean) {
+        val context = holder.itemView.context
         val scrollView = holder.binding.pictogramScrollView
         val strip = holder.binding.pictogramStrip
+
         strip.removeAllViews()
+        scrollView.isVisible = message.pictogramIds.isNotEmpty()
+        if (message.pictogramIds.isEmpty()) return
 
-        val scrollParams = scrollView.layoutParams as LinearLayout.LayoutParams
-        scrollParams.gravity = if (isUser) Gravity.END else Gravity.START
-        scrollView.layoutParams = scrollParams
+        val size = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_size)
+        val gap = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_gap)
+        val onClick = View.OnClickListener { onPictogramsClick(message) }
 
-        strip.gravity = if (isUser) (Gravity.END or Gravity.CENTER_VERTICAL) else (Gravity.START or Gravity.CENTER_VERTICAL)
+        scrollView.setOnClickListener(onClick)
+        strip.setOnClickListener(onClick)
 
-        if (message.pictogramIds.isEmpty()) {
-            scrollView.visibility = View.GONE
-        } else {
-            scrollView.visibility = View.VISIBLE
-
-            val size = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_size)
-            val gap = context.resources.getDimensionPixelSize(R.dimen.pictogram_strip_gap)
-
-            val onPictogramsClickListener = View.OnClickListener {
-                onPictogramsClick(message)
-            }
-            scrollView.setOnClickListener(onPictogramsClickListener)
-            strip.setOnClickListener(onPictogramsClickListener)
-
-            message.pictogramIds.forEachIndexed { index, id ->
-                val image = ImageView(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                        if (index > 0) marginStart = gap
-                    }
-                    scaleType = ImageView.ScaleType.FIT_CENTER
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                    load(PictogramRepository.imageSource(context, id)) {
-                        crossfade(true)
-                        placeholder(R.drawable.ic_pictogram_placeholder)
-                        error(R.drawable.ic_pictogram_placeholder)
-                    }
-                    setOnClickListener(onPictogramsClickListener)
+        message.pictogramIds.forEachIndexed { index, id ->
+            val image = ImageView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    if (index > 0) marginStart = gap
                 }
-                strip.addView(image)
-            }
-
-            //per lo screen reader la striscia è un solo elemento, con la frase come descrizione
-            scrollView.contentDescription = context.getString(R.string.pictograms_of, message.text)
-            strip.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-
-            if (isUser) {
-                scrollView.post {
-                    scrollView.fullScroll(View.FOCUS_RIGHT)
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                load(PictogramRepository.imageSource(context, id)) {
+                    crossfade(true)
+                    placeholder(R.drawable.ic_pictogram_placeholder)
+                    error(R.drawable.ic_pictogram_placeholder)
                 }
-            } else {
-                scrollView.post {
-                    scrollView.fullScroll(View.FOCUS_LEFT)
-                }
+                setOnClickListener(onClick)
             }
+            strip.addView(image)
         }
 
-        //Leggi e Salva compaiono solo sulle frasi suggerite, non su quelle scritte dall'utente
-        if (message.author != AUTHOR_MODEL || message.text.isBlank()) {
-            holder.binding.actionRow.visibility = View.GONE
-        } else {
-            holder.binding.actionRow.visibility = View.VISIBLE
-            holder.binding.speakButton.setOnClickListener { onSpeak(message) }
+        //per lo screen reader la striscia è un solo elemento, con la frase come descrizione
+        scrollView.contentDescription = context.getString(R.string.pictograms_of, message.text)
+        strip.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
 
-            val save = holder.binding.saveButton
-            val saved = isFavorite(message.text)
-
-            //lo stato si legge nella parola, non solo nell'icona
-            save.setText(if (saved) R.string.action_saved else R.string.action_save)
-            save.setIconResource(
-                if (saved) R.drawable.ic_star_filled
-                else R.drawable.ic_star
-            )
-
-            //contorno per l'azione ancora da fare, riempimento tenue quando è già fatta
-            save.backgroundTintList = ColorStateList.valueOf(
-                if (saved) ContextCompat.getColor(context, R.color.aac_primary_container)
-                else Color.TRANSPARENT
-            )
-            save.strokeWidth = if (saved) 0 else holder.saveStrokeWidth
-
-            save.setOnClickListener { onToggleFavorite(message) }
+        //la striscia parte dal lato da cui si comincia a leggerla
+        scrollView.post {
+            scrollView.fullScroll(if (isUser) View.FOCUS_RIGHT else View.FOCUS_LEFT)
         }
     }
 
+    //Leggi e Salva compaiono solo sulle frasi suggerite, non su quelle scritte dall'utente
+    private fun bindActions(holder: ChatViewHolder, message: ChatMessage) {
+        val context = holder.itemView.context
+        val isSuggestion = message.author == AUTHOR_MODEL && message.text.isNotBlank()
+
+        holder.binding.actionRow.isVisible = isSuggestion
+        if (!isSuggestion) return
+
+        holder.binding.speakButton.setOnClickListener { onSpeak(message) }
+
+        val save = holder.binding.saveButton
+        val saved = isFavorite(message.text)
+
+        //lo stato si legge nella parola, non solo nell'icona
+        save.setText(if (saved) R.string.action_saved else R.string.action_save)
+        save.setIconResource(if (saved) R.drawable.ic_star_filled else R.drawable.ic_star)
+
+        //contorno per l'azione ancora da fare, riempimento tenue quando è già fatta
+        save.backgroundTintList = ColorStateList.valueOf(
+            if (saved) ContextCompat.getColor(context, R.color.aac_primary_container)
+            else Color.TRANSPARENT
+        )
+        save.strokeWidth = if (saved) 0 else holder.saveStrokeWidth
+
+        save.setOnClickListener { onToggleFavorite(message) }
+    }
+
+    //il pulsante Salva cambia aspetto quando la lista dei preferiti cambia
     fun refreshSavedState() {
-        notifyItemRangeChanged(0, itemCount) //aggiorna esclusivamente le viste visibili ricaricando lo stato corrente del pulsante Salva
+        notifyItemRangeChanged(0, itemCount)
     }
 
-    fun updateMessages(newMessages: List<ChatMessage>, onCommit: () -> Unit = {}) {
-        submitList(newMessages, onCommit)
-    }
-
-    class ChatMessageDiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
-        override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            return oldItem.id == newItem.id
-        }
-
-        override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            return oldItem == newItem
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<ChatMessage>() {
+            override fun areItemsTheSame(old: ChatMessage, new: ChatMessage) = old.id == new.id
+            override fun areContentsTheSame(old: ChatMessage, new: ChatMessage) = old == new
         }
     }
 }

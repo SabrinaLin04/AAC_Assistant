@@ -1,5 +1,6 @@
 package it.lbsl.aacassistant
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -52,7 +53,7 @@ class ProfileViewModel : ViewModel() {
             _isLoading.value = true
             try {
                 val user = auth.currentUser ?: throw IllegalStateException("User not logged in")
-                
+
                 val profileUpdates = userProfileChangeRequest {
                     this.displayName = displayName
                 }
@@ -71,10 +72,7 @@ class ProfileViewModel : ViewModel() {
                 val updates = mutableMapOf<String, Any?>(
                     "displayName" to displayName
                 )
-                // Se l'email è stata inviata per verifica, non aggiorniamo ancora Firestore
-                // o lo aggiorniamo solo se vogliamo che rifletta l'email "corrente" (quella vecchia)
-                // In questo caso, l'email in Firestore dovrebbe cambiare solo dopo la verifica.
-                // Tuttavia, il repository.updateProfile(updates) sovrascriverà l'email se la passiamo.
+                //la nuova email si salva solo dopo che l'utente l'ha verificata
                 if (!emailVerificationSent) {
                     updates["email"] = email
                 }
@@ -100,7 +98,7 @@ class ProfileViewModel : ViewModel() {
                 } else if (message.contains("no-password-for-user") || message.contains("social accounts")) {
                     _statusMessage.value = R.string.error_provider_password_unsupported
                 } else {
-                    android.util.Log.e("ProfileViewModel", "Error updating profile", e)
+                    Log.e(TAG, "aggiornamento del profilo fallito", e)
                     _statusMessage.value = R.string.error_update_profile
                 }
             } finally {
@@ -111,5 +109,9 @@ class ProfileViewModel : ViewModel() {
 
     fun clearStatus() {
         _statusMessage.value = null
+    }
+
+    private companion object {
+        const val TAG = "ProfileViewModel"
     }
 }
