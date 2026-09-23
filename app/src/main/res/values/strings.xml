@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="it">
 
     <string name="app_name">AAC Assistant</string>
 
@@ -38,7 +38,6 @@
     <string name="delete_favorite_confirm_title">Rimuovere la frase?</string>
     <string name="delete_favorite_confirm_message">Sei sicuro di voler eliminare la frase "%1$s"?</string>
 
-    <string name="sign_in_cancelled">Accesso annullato</string>
     <string name="no_network">Nessuna connessione internet</string>
     <string name="sign_in_error">Errore di accesso: %1$s</string>
     <string name="sign_in">Accedi</string>
@@ -54,6 +53,7 @@
 
     <plurals name="favorite_usage_count">
         <item quantity="one">Usata %1$d volta</item>
+        <item quantity="many">Usata %1$d volte</item>
         <item quantity="other">Usata %1$d volte</item>
     </plurals>
 
@@ -76,11 +76,9 @@
 
     <string name="credits_pictograms_title">Pittogrammi</string>
     <string name="credits_arasaac">The pictographic symbols used are the property of the Government of Aragón and have been created by Sergio Palao for ARASAAC (http://www.arasaac.org), that distributes them under Creative Commons License BY-NC-SA</string>
-    <string name="credits_arasaac_link">https://arasaac.org</string>
 
     <string name="credits_model_title">Modello linguistico</string>
     <string name="credits_gemma">Le frasi sono generate localmente sul dispositivo da Gemma 3, un modello di Google, utilizzato secondo i Gemma Terms of Use.</string>
-    <string name="credits_gemma_link">https://ai.google.dev/gemma/terms</string>
 
     <string name="credits_icons_title">Icone</string>
     <string name="credits_icons">Le icone dell\'interfaccia sono Material Symbols di Google, distribuite con licenza Apache 2.0.</string>
@@ -173,6 +171,7 @@
 
     <plurals name="context_phrase_count">
         <item quantity="one">%1$d frase salvata</item>
+        <item quantity="many">%1$d frasi salvate</item>
         <item quantity="other">%1$d frasi salvate</item>
     </plurals>
     <string name="edit_context_named">Modifica %1$s</string>

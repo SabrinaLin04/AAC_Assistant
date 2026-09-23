@@ -286,6 +286,7 @@
 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
+                <!-- chiusa all'avvio: si apre solo toccando l'icona accanto al campo -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/pictogramBoard"
                     android:layout_width="match_parent"
@@ -294,7 +295,8 @@
                     android:clipToPadding="false"
                     android:contentDescription="@string/board_description"
                     android:paddingHorizontal="8dp"
-                    android:scrollbars="vertical" />
+                    android:scrollbars="vertical"
+                    android:visibility="gone" />
 
                 <LinearLayout
                     android:id="@+id/inputBar"
@@ -305,15 +307,16 @@
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="12dp">
 
+                    <!-- apre e chiude la tavola dei pittogrammi; la tastiera si apre toccando il campo -->
                     <ImageButton
                         android:id="@+id/boardToggle"
                         android:layout_width="@dimen/touch_target_min"
                         android:layout_height="@dimen/touch_target_min"
                         android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/board_hide"
+                        android:contentDescription="@string/board_show"
                         android:padding="10dp"
                         android:scaleType="fitCenter"
-                        android:src="@drawable/ic_keyboard"
+                        android:src="@drawable/ic_grid_view"
                         app:tint="?attr/colorPrimary" />
 
                     <EditText

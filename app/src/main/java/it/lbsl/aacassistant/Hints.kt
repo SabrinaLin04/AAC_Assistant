@@ -40,7 +40,6 @@ class HintsViewModel : ViewModel() {
     }
 
     override fun onCleared() {
-        super.onCleared()
         registration?.remove()
     }
 }

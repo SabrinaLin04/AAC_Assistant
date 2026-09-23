@@ -25,7 +25,7 @@
 
         <item name="android:statusBarColor">@color/aac_surface</item>
         <item name="android:navigationBarColor">@color/aac_surface</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+        <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
 
         <item name="materialButtonStyle">@style/Widget.AAC.Button</item>

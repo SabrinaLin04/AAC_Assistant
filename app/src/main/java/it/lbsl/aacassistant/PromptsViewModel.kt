@@ -37,7 +37,6 @@ class PromptsViewModel : ViewModel() {
     fun clearSaveResult() { _saveResult.value = null }
 
     override fun onCleared() {
-        super.onCleared()
         registration?.remove()
     }
 }

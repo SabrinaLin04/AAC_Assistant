@@ -487,7 +487,6 @@ class LlmViewModel : ViewModel() {
     }
 
     override fun onCleared() {
-        super.onCleared()
         promptsRegistration?.remove()
         conversation?.close()
         engine?.close()

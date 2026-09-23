@@ -196,14 +196,7 @@ class SuggestFragment: Fragment() {
         binding.pictogramBoard.adapter = boardAdapter
 
         binding.boardToggle.setOnClickListener {
-            if (binding.pictogramBoard.isVisible) {
-                showBoard(false)
-                binding.messageInput.requestFocus()
-                WindowCompat.getInsetsController(requireActivity().window, binding.messageInput)
-                    .show(WindowInsetsCompat.Type.ime())
-            } else {
-                showBoard(true)
-            }
+            showBoard(!binding.pictogramBoard.isVisible)
         }
         updateBoardToggle()
 
@@ -226,13 +219,11 @@ class SuggestFragment: Fragment() {
         updateBoardToggle()
     }
 
+    //l'icona resta quella dei pittogrammi: lo stesso tocco li apre e li richiude
     private fun updateBoardToggle() {
-        val boardVisible = binding.pictogramBoard.isVisible
-        binding.boardToggle.setImageResource(
-            if (boardVisible) R.drawable.ic_keyboard else R.drawable.ic_grid_view
+        binding.boardToggle.contentDescription = getString(
+            if (binding.pictogramBoard.isVisible) R.string.board_hide else R.string.board_show
         )
-        binding.boardToggle.contentDescription =
-            getString(if (boardVisible) R.string.board_hide else R.string.board_show)
     }
 
     private fun appendWord(word: String) {
