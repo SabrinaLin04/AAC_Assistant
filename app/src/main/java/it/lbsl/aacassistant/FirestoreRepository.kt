@@ -34,8 +34,9 @@ class FirestoreRepository {
         userDoc().update(updates).await()
     }
 
-    suspend fun defaultContexts() {
-        if (contexts().limit(1).get().await().isEmpty.not()) return
+    //al primo accesso l'elenco dei posti non è vuoto: ci sono quattro situazioni tipiche
+    suspend fun createDefaultContexts() {
+        if (!contexts().limit(1).get().await().isEmpty) return
 
         val defaults = listOf(
             //pittogrammi presi da assets/indice.json: "pasto" e "visita" non ci sono, si usano mangiare e dottore
@@ -52,12 +53,18 @@ class FirestoreRepository {
             addContext(name, description, colorIndex = index, pictogramId = pictogramId)
         }
     }
+
     suspend fun addFavorite(
         text: String,
-        pictogramIds: List<Int> = emptyList(),
+        pictograms: List<WordPictogram> = emptyList(),
         contextId: String? = null
-    ) : String {
-        val favorite = Favorite(text = text, pictogramIds = pictogramIds, contextId = contextId)
+    ): String {
+        val favorite = Favorite(
+            text = text,
+            pictogramIds = pictograms.map { it.pictogramId },
+            pictogramWords = pictograms.map { it.word },
+            contextId = contextId
+        )
         return favorites().add(favorite).await().id
     }
 
@@ -66,7 +73,7 @@ class FirestoreRepository {
         description: String,
         colorIndex: Int? = null,
         pictogramId: Int? = null
-    ) : String {
+    ): String {
         val context = UserContext(
             name = name,
             description = description,
@@ -76,10 +83,10 @@ class FirestoreRepository {
         return contexts().add(context).await().id
     }
 
-    suspend fun getFavorites() : List<Favorite> =
+    suspend fun getFavorites(): List<Favorite> =
         favorites().get().await().toObjects(Favorite::class.java)
 
-    suspend fun getContexts() : List<UserContext> =
+    suspend fun getContexts(): List<UserContext> =
         contexts().get().await().toObjects(UserContext::class.java)
 
     suspend fun getActiveContextId(): String? =
@@ -145,7 +152,7 @@ class FirestoreRepository {
             .addOnFailureListener { onDone(false) }
     }
 
-    // listener in tempo reale: se l'utente salva, chi ascolta viene aggiornato subito
+    //in tempo reale: se chi assiste cambia i prompt, la schermata li riceve subito
     fun observePrompts(onChange: (PromptConfig) -> Unit): ListenerRegistration? {
         val doc = promptsDoc() ?: return null
         return doc.addSnapshotListener { snapshot, error ->

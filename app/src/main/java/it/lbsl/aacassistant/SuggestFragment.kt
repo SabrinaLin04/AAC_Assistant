@@ -8,6 +8,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -84,13 +85,17 @@ class SuggestFragment: Fragment() {
         _binding = null
     }
 
-    //configura la recycler view per la chat impostando l'adapter, la logica per salvare le frasi e lo scorrimento automatico all'ultimo messaggio quando cambia il layout
+    //la chat: ogni frase si può leggere ad alta voce o salvare fra le proprie
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(
             isFavorite = { text -> favoritesViewModel.isFavorite(text) },
-            onToggleFavorite = { text, pictogramIds ->
-                val wasSaved = favoritesViewModel.isFavorite(text)
-                favoritesViewModel.toggleFavorite(text, pictogramIds, contextsViewModel.activeContextId.value)
+            onToggleFavorite = { message ->
+                val wasSaved = favoritesViewModel.isFavorite(message.text)
+                favoritesViewModel.toggleFavorite(
+                    message.text,
+                    message.pictograms,
+                    contextsViewModel.activeContextId.value
+                )
                 Snackbar.make(
                     binding.root,
                     if (wasSaved) R.string.removed_phrase else R.string.saved_in_my_phrases,
@@ -100,22 +105,22 @@ class SuggestFragment: Fragment() {
                 }.show()
             },
             onPictogramsClick = { message ->
-                speakAndShow(speechViewModel, message.text, message.pictogramIds)
+                speakAndShow(speechViewModel, message.text, message.pictograms)
             },
             onSpeak = { message ->
-                speakAndShow(speechViewModel, message.text, message.pictogramIds)
+                speakAndShow(speechViewModel, message.text, message.pictograms)
             }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = chatAdapter
+        //quando la tastiera si apre la lista si accorcia: l'ultima frase resta in vista
         binding.recyclerView.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
-            if (bottom < oldBottom) {
-                binding.recyclerView.postDelayed({
-                    if (chatAdapter.itemCount > 0) {
-                        binding.recyclerView.scrollToPosition(chatAdapter.itemCount - 1)
-                    }
-                }, 100)
-            }
+            if (bottom >= oldBottom) return@addOnLayoutChangeListener
+            binding.recyclerView.postDelayed({
+                if (chatAdapter.itemCount > 0) {
+                    binding.recyclerView.scrollToPosition(chatAdapter.itemCount - 1)
+                }
+            }, SCROLL_DELAY_MS)
         }
     }
 
@@ -130,20 +135,14 @@ class SuggestFragment: Fragment() {
         }
     }
 
-    //imposta il comportamento della barra di testo, gestendo l'invio dei messaggi e abilitando il pulsante solo se è presente del testo e il modello non è in elaborazione
+    //campo di scrittura: invio, cancella l'ultima parola e invito che cambia con la modalità
     private fun setupInputBar() {
         updateSendButton()
 
         binding.sendButton.setOnClickListener { sendInput() }
         binding.eraseWordButton.setOnClickListener { eraseLastWord() }
 
-        binding.messageInput.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                binding.messageInput.hint = ""
-            } else {
-                updateInputHint(binding.modeToggle.checkedButtonId)
-            }
-        }
+        binding.messageInput.setOnFocusChangeListener { _, _ -> updateInputHint() }
 
         binding.messageInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -162,20 +161,23 @@ class SuggestFragment: Fragment() {
 
     //"Voglio dire" o "Mi hanno detto": il campo cambia suggerimento a seconda della scelta
     private fun setupModeToggle() {
-        binding.modeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) updateInputHint(checkedId)
+        binding.modeToggle.addOnButtonCheckedListener { _, _, isChecked ->
+            if (isChecked) updateInputHint()
         }
-        updateInputHint(binding.modeToggle.checkedButtonId)
+        updateInputHint()
     }
 
-    private fun selectedKind(): InputKind =
-        if (binding.modeToggle.checkedButtonId == R.id.modeReply) InputKind.REPLY else InputKind.INTENTION
+    private fun isReplyMode(): Boolean = binding.modeToggle.checkedButtonId == R.id.modeReply
 
-    private fun updateInputHint(checkedId: Int) {
-        if (!binding.messageInput.hasFocus()) {
-            binding.messageInput.setHint(
-                if (checkedId == R.id.modeReply) R.string.input_hint_reply else R.string.input_hint_intention
-            )
+    private fun selectedKind(): InputKind =
+        if (isReplyMode()) InputKind.REPLY else InputKind.INTENTION
+
+    //l'invito nel campo segue la modalità scelta e sparisce mentre si scrive
+    private fun updateInputHint() {
+        binding.messageInput.hint = when {
+            binding.messageInput.hasFocus() -> ""
+            isReplyMode() -> getString(R.string.input_hint_reply)
+            else -> getString(R.string.input_hint_intention)
         }
     }
 
@@ -258,7 +260,7 @@ class SuggestFragment: Fragment() {
         updateSendButtonTint(enabled)
     }
 
-    //configura l'azione al tocco sulla barra del contesto per tornare alla scelta dei contesti rimuovendo il fragment corrente dallo stack
+    //toccando il nome del posto si torna a sceglierlo
     private fun setupContextBar() {
         binding.contextBar.setOnClickListener {
             val navController = findNavController()
@@ -285,7 +287,7 @@ class SuggestFragment: Fragment() {
                 val chip = ItemSavedChipBinding.inflate(layoutInflater, binding.savedChips, false).root
                 chip.text = favorite.text
                 chip.setOnClickListener {
-                    speakAndShow(speechViewModel, favorite.text, favorite.pictogramIds)
+                    speakAndShow(speechViewModel, favorite.text, favorite.pictograms)
                     favoritesViewModel.markAsUsed(favorite.id)
                 }
                 binding.savedChips.addView(chip)
@@ -310,86 +312,105 @@ class SuggestFragment: Fragment() {
     }
 
     private fun observeViewModel() {
+        observeModel()
+        observeChat()
+        observeSavedPhrases()
+        observeContext()
+        hintsViewModel.dismissed.observe(viewLifecycleOwner) { updateHint() }
+    }
 
+    //il caricamento del modello decide cosa si vede: attesa, errore o chat
+    private fun observeModel() {
         viewModel.modelState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ModelState.Idle -> { }
                 is ModelState.Initializing -> showLoading(getString(state.messageRes))
                 is ModelState.Ready -> showChat(demo = false)
                 is ModelState.DemoMode -> showChat(demo = true)
-                is ModelState.Error -> showError(
-                    buildString {
-                        append(getString(state.messageRes))
-                        state.detail?.let { append("\n").append(it)}
-                    }
-                )
+                is ModelState.Error -> showError(message(state.messageRes, state.detail, "\n"))
             }
         }
+    }
 
-        hintsViewModel.dismissed.observe(viewLifecycleOwner) { updateHint() }
+    private fun observeChat() {
+        viewModel.messages.observe(viewLifecycleOwner) { messages ->
+            updateSavedPhrases()
+            updateHint()
 
-        favoritesViewModel.favorites.observe(viewLifecycleOwner){
+            val oldSize = chatAdapter.itemCount
+            chatAdapter.submitList(messages) { scrollToNewMessages(messages, oldSize) }
+        }
+
+        viewModel.chatState.observe(viewLifecycleOwner) { state ->
+            showGenerating(state is ChatState.Generating)
+
+            if (state is ChatState.Error) {
+                Snackbar.make(
+                    binding.root,
+                    message(state.messageRes, state.detail, ": "),
+                    Snackbar.LENGTH_LONG
+                ).show()
+                viewModel.clearChatError()
+            }
+        }
+    }
+
+    private fun observeSavedPhrases() {
+        favoritesViewModel.favorites.observe(viewLifecycleOwner) {
             chatAdapter.refreshSavedState()
             updateSavedPhrases()
         }
-        favoritesViewModel.errorMessage.observe(viewLifecycleOwner){ resId ->
+        favoritesViewModel.errorMessage.observe(viewLifecycleOwner) { resId ->
             resId ?: return@observe
-            Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(binding.root, getString(resId), Snackbar.LENGTH_LONG).show()
             favoritesViewModel.clearError()
         }
+    }
 
+    private fun observeContext() {
         contextsViewModel.activeContext.observe(viewLifecycleOwner) { ctx ->
             viewModel.setContext(ctx?.name, ctx?.description)
             binding.contextLabel.text = ctx?.name ?: getString(R.string.context_none)
             bindContextBar(ctx)
             updateSavedPhrases()
         }
-
-        viewModel.messages.observe(viewLifecycleOwner) { messages ->
-            updateSavedPhrases()
-            updateHint()
-
-            val oldSize = chatAdapter.itemCount
-            chatAdapter.updateMessages(messages) {
-                if (messages.isNotEmpty()) {
-                    val targetIndex = if (messages.size > oldSize) {
-                        oldSize
-                    } else if (messages.first().author != AUTHOR_MODEL && messages.size > 1) {
-                        1
-                    } else {
-                        0
-                    }
-                    val lm = binding.recyclerView.layoutManager as? LinearLayoutManager
-                    lm?.scrollToPositionWithOffset(targetIndex, 0)
-                }
-            }
-        }
-
-        viewModel.chatState.observe(viewLifecycleOwner) { state ->
-            val isGenerating = state is ChatState.Generating
-            binding.messageInput.isEnabled = !isGenerating
-            binding.suggestButton.isEnabled = !isGenerating
-            binding.suggestProgressBar.visibility = if (isGenerating) View.VISIBLE else View.GONE
-            updateSendButton()
-
-            if (isGenerating) {
-                binding.statusIndicator.text = getString(R.string.chat_status_generating)
-                binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_busy))
-            } else {
-                binding.statusIndicator.text = getString(R.string.chat_status_available)
-                binding.statusIndicator.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_available))
-            }
-
-            if (state is ChatState.Error) {
-                val message = buildString {
-                    append(getString(state.messageRes))
-                    state.detail?.let { append(": ").append(it) }
-                }
-                Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
-                viewModel.clearChatError()
-            }
-        }
     }
+
+    //mentre il modello lavora il campo è bloccato e il pallino accanto al nome diventa arancione
+    private fun showGenerating(isGenerating: Boolean) {
+        binding.messageInput.isEnabled = !isGenerating
+        binding.suggestButton.isEnabled = !isGenerating
+        binding.suggestProgressBar.isVisible = isGenerating
+        updateSendButton()
+
+        binding.statusIndicator.setText(
+            if (isGenerating) R.string.chat_status_generating else R.string.chat_status_available
+        )
+        binding.statusIndicator.setTextColor(
+            ContextCompat.getColor(
+                requireContext(),
+                if (isGenerating) R.color.status_busy else R.color.status_available
+            )
+        )
+    }
+
+    //porta in cima la prima frase nuova, così si legge dall'inizio senza scorrere
+    private fun scrollToNewMessages(messages: List<ChatMessage>, oldSize: Int) {
+        if (messages.isEmpty()) return
+
+        val target = when {
+            messages.size > oldSize -> oldSize
+            //la prima riga è quella scritta dall'utente, i suggerimenti cominciano dopo
+            messages.first().author != AUTHOR_MODEL && messages.size > 1 -> 1
+            else -> 0
+        }
+        (binding.recyclerView.layoutManager as? LinearLayoutManager)
+            ?.scrollToPositionWithOffset(target, 0)
+    }
+
+    //testo dell'errore, con il dettaglio tecnico in coda quando c'è
+    private fun message(@StringRes messageRes: Int, detail: String?, separator: String): String =
+        getString(messageRes) + detail?.let { separator + it }.orEmpty()
 
     //ripete nella barra il colore e il pittogramma del posto appena scelto
     private fun bindContextBar(userContext: UserContext?) {
@@ -409,30 +430,32 @@ class SuggestFragment: Fragment() {
         }
     }
 
-    //nasconde la chat principale e le schermate di errore per visualizzare l'animazione di caricamento
     private fun showLoading(message: String) {
-        binding.loadingGroup.visibility = View.VISIBLE
-        binding.errorGroup.visibility = View.GONE
-        binding.chatGroup.visibility = View.GONE
+        showOnly(binding.loadingGroup)
         binding.loadingText.text = message
     }
 
-    //rende visibile la lista dei messaggi nascondendo gli indicatori di stato e mostrando un banner specifico se il modello è avviato in modalità dimostrativa
-    private fun showChat(demo: Boolean = false) {
-        binding.loadingGroup.visibility = View.GONE
-        binding.errorGroup.visibility = View.GONE
-        binding.chatGroup.visibility = View.VISIBLE
-        binding.demoBanner.visibility = if (demo) View.VISIBLE else View.GONE
+    //senza modello sul telefono la chat funziona lo stesso, con frasi preimpostate: il banner lo dice
+    private fun showChat(demo: Boolean) {
+        showOnly(binding.chatGroup)
+        binding.demoBanner.isVisible = demo
     }
 
     private fun showError(message: String) {
-        binding.loadingGroup.visibility = View.GONE
-        binding.errorGroup.visibility = View.VISIBLE
-        binding.chatGroup.visibility = View.GONE
+        showOnly(binding.errorGroup)
         binding.errorMessage.text = message
+    }
+
+    //attesa, errore e chat sono le tre facce della schermata: se ne vede una per volta
+    private fun showOnly(group: View) {
+        listOf(binding.loadingGroup, binding.errorGroup, binding.chatGroup)
+            .forEach { it.isVisible = it == group }
     }
 
     private companion object {
         const val MAX_SAVED_CHIPS = 6
+
+        //il tempo che la lista impiega a rimpicciolirsi quando si apre la tastiera
+        const val SCROLL_DELAY_MS = 100L
     }
 }

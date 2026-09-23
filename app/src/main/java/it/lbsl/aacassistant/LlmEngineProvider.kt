@@ -9,7 +9,7 @@ data class ModelInfo(
     val backend: Backend = Backend.GPU()
 )
 
-//gestisce il rilevamento e la selezione dei modelli linguistici fisicamente disponibili all'interno dello spazio di archiviazione dell'applicazione
+//trova i modelli presenti sul telefono e li prepara per l'uso
 class LlmEngineProvider(private val filesDir: File) {
 
     private val knownModels = listOf(
@@ -23,13 +23,13 @@ class LlmEngineProvider(private val filesDir: File) {
     var selected: ModelInfo? = null
         private set
 
-    //cerca i modelli: prima in filesDir, se non c'è prova a copiarlo da /data/local/tmp/
+    //i modelli utilizzabili: quelli già copiati nell'app e quelli pronti da copiare
     fun discoverModels(): List<ModelInfo> =
         knownModels.filter { model ->
             File(filesDir, model.filename).exists() || stagedFile(model).exists()
         }
 
-    //copia il modello da /data/local/tmp/ a filesDir se necessario restituisce il path finale, o null se il file non esiste da nessuna parte
+    //copia il modello dentro l'app se serve e restituisce il percorso, null se il file non c'è
     fun prepareModel(model: ModelInfo): String? {
         val target = File(filesDir, model.filename)
         if (target.exists()) {

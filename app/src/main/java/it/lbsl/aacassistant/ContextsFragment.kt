@@ -10,8 +10,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import it.lbsl.aacassistant.databinding.FragmentContextsBinding
@@ -29,7 +27,7 @@ class ContextsFragment : Fragment() {
     private val hintsViewModel: HintsViewModel by activityViewModels()
     private lateinit var adapter: ContextsAdapter
 
-    private val quickPictograms = mutableMapOf<String, List<Int>>()
+    private val quickPictograms = mutableMapOf<String, List<WordPictogram>>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -133,7 +131,7 @@ class ContextsFragment : Fragment() {
         }
     }
 
-    //elimina il contesto dopo una conferma, lasciando dalla snackbar la possibilità di ripristinarlo
+    //cancella il posto dopo una conferma; la barra in basso permette di rimetterlo com'era
     private fun confirmDelete(contextItem: UserContext, onCancel: () -> Unit = {}) {
         requireContext().showConfirmationDialog(
             title = getString(R.string.delete_context_confirm_title),
@@ -159,29 +157,18 @@ class ContextsFragment : Fragment() {
         )
     }
 
-    //implementa la funzionalità di scorrimento laterale sugli elementi della lista per eliminarli offrendo un'opzione di annullamento
+    //scorrendo una riga di lato si cancella il posto, con una conferma prima
     private fun setupSwipeToDelete() {
-        val callback = object : ItemTouchHelper.SimpleCallback(
-            0,
-            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
-        ) {
-            override fun onMove(
-                rv: RecyclerView,
-                vh: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ) = false
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.bindingAdapterPosition
-                val contextItem = adapter.itemAt(position)
-
-                confirmDelete(contextItem, onCancel = { adapter.notifyItemChanged(position) })
-            }
+        binding.contextsRecycler.onSwipe { position ->
+            confirmDelete(
+                adapter.itemAt(position),
+                //annullando, la riga scorsa via torna al suo posto
+                onCancel = { adapter.notifyItemChanged(position) }
+            )
         }
-        ItemTouchHelper(callback).attachToRecyclerView(binding.contextsRecycler)
     }
 
-    //mostra una finestra di dialogo che permette all'utente di inserire i dati per un nuovo contesto o di modificarne uno esistente
+    //finestra per creare un posto nuovo o cambiare quello che si è toccato
     private fun showContextDialog(contextToEdit: UserContext?) {
         val isEditing = contextToEdit != null
 

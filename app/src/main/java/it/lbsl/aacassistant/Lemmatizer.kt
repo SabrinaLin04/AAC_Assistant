@@ -7,9 +7,21 @@ import java.io.FileNotFoundException
 import java.util.Locale
 import java.util.zip.GZIPInputStream
 
-//Lemmatizzazione viene precalcolata tramite lo script tools/genera_tabella_lemmi.py e fornita come asset
-//tempo di esecuzione questa classe effettua solo una ricerca in un dizionario
-//tabella filtrata contente le forme contenute in ARASAAC
+//una parola pulita: tutta minuscola e senza la punteggiatura intorno
+fun normalizeWord(word: String): String =
+    word.lowercase(Locale.ITALIAN)
+        .trim()
+        .trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')', '\u00AB', '\u00BB')
+
+//le parole di una frase: si taglia su tutto ci\u00F2 che non \u00E8 lettera, apostrofi compresi
+fun wordsOf(text: String): List<String> =
+    text.lowercase(Locale.ITALIAN)
+        .split(Regex("[^\\p{L}]+"))
+        .filter { it.isNotEmpty() }
+
+//riporta una parola alla sua forma base ("mangiato" -> "mangiare").
+//La tabella è precalcolata da tools/genera_tabella_lemmi.py e contiene solo le forme
+//che servono ad ARASAAC: qui dentro si fa soltanto una ricerca nel dizionario
 class Lemmatizer private constructor(
     private val forms: Map<String, String>
 ) {
@@ -17,15 +29,15 @@ class Lemmatizer private constructor(
     //numero di coppie forma-lemma caricate
     val size: Int get() = forms.size
 
-    //restituisce la forma base della parola se non è presente una voce per essa
+    //forma base della parola; se la tabella non la conosce restituisce la parola stessa
     fun lemmatize(word: String): String {
-        val normalized = normalize(word)
+        val normalized = normalizeWord(word)
         if (normalized.isEmpty()) return ""
 
         forms[normalized]?.let { return it }
 
-        //la parola non è nella tabella
-        //genera candidati verosimili e ne accetta uno solo se la tabella lo conferma
+        //parola sconosciuta: si provano le forme base più probabili e si accetta
+        //solo quella che la tabella conferma
         for (candidate in candidates(normalized)) {
             forms[candidate]?.let { return it }
         }
@@ -33,18 +45,12 @@ class Lemmatizer private constructor(
         return normalized
     }
 
-    private fun normalize(word: String): String =
-        word.lowercase(Locale.ITALIAN)
-            .trim()
-            .trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')', '\u00AB', '\u00BB')
-
-
-    //candidati per la flessione italiana
+    //possibili forme base secondo le regole dell'italiano
     private fun candidates(word: String): List<String> {
         val out = mutableListOf<String>()
         val n = word.length
 
-        //plurali
+        //plurali: cane/cani, amica/amiche
         if (n > 3) {
             when (word.last()) {
                 'i' -> {
@@ -70,7 +76,7 @@ class Lemmatizer private constructor(
             }
         }
 
-        //diminutivi accrescitivi
+        //diminutivi e accrescitivi: gattino, gattone
         if (n > 6) {
             for (suffix in listOf("ino", "ina", "etto", "etta", "one", "ona")) {
                 if (word.endsWith(suffix)) {
@@ -88,7 +94,7 @@ class Lemmatizer private constructor(
     companion object {
         private const val ASSET = "lemmi_it.tsv.gz"
 
-        //carico la tabella fuori dal thread principale, conservo un'unica istanza per l'intero ciclo di viita dell'app
+        //la tabella si carica fuori dal thread principale e resta in memoria per tutta l'app
         suspend fun load(context: Context, asset: String = ASSET): Lemmatizer =
             withContext(Dispatchers.IO) {
                 val map = HashMap<String, String>(400_000)

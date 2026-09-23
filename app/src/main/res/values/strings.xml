@@ -165,6 +165,8 @@
     <string name="saved_here_title">Le tue frasi per questo posto</string>
     <string name="pictograms_of">Pittogrammi: %1$s</string>
     <string name="action_repeat">Ripeti</string>
+    <string name="action_share">Condividi</string>
+    <string name="share_failed">Non è stato possibile preparare l\'immagine da condividere</string>
     <string name="speech_unavailable">Il telefono non ha la voce italiana: si installa da Impostazioni, Sintesi vocale.</string>
     <string name="prompts_intention_title">Richiesta con quello che vuoi dire</string>
     <string name="prompts_intention_hint">Usa {messaggio} come segnaposto per le parole scelte.</string>

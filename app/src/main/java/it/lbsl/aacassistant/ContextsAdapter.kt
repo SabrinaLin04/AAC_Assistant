@@ -14,7 +14,8 @@ class ContextsAdapter (
     private val onSelect: (UserContext) -> Unit,
     private val onEdit: (UserContext) -> Unit
 ) : ListAdapter<UserContext, ContextsAdapter.VH>(DIFF) {
-    private var activeId: String?= null
+    private var activeId: String? = null
+    private var phraseCounts: Map<String, Int> = emptyMap()
 
     //aggiorna l'indicatore sulla riga che si spegne e su quella che si accende
     fun setActiveId(id: String?) {
@@ -31,8 +32,6 @@ class ContextsAdapter (
             .takeIf { it >= 0 }
             ?.let { notifyItemChanged(it) }
     }
-
-    private var phraseCounts: Map<String, Int> = emptyMap()
 
     //quante frasi sono salvate in ogni posto, mostrate sotto il nome
     fun setPhraseCounts(counts: Map<String, Int>) {
@@ -79,20 +78,12 @@ class ContextsAdapter (
         holder.binding.editButton.setOnClickListener { onEdit(item) }
     }
 
-    fun itemAt(position: Int) : UserContext = getItem(position)
+    fun itemAt(position: Int): UserContext = getItem(position)
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<UserContext>() {
-
-            //controlla se i due elementi rappresentano la stessa entità logica confrontando il loro id
-            override fun areItemsTheSame(oldItem: UserContext, newItem: UserContext): Boolean {
-                return oldItem.id == newItem.id
-            }
-
-            //controlla se tutti i campi dati all'interno dei due elementi sono identici
-            override fun areContentsTheSame(oldItem: UserContext, newItem: UserContext): Boolean {
-                return oldItem == newItem
-            }
+            override fun areItemsTheSame(old: UserContext, new: UserContext) = old.id == new.id
+            override fun areContentsTheSame(old: UserContext, new: UserContext) = old == new
         }
     }
 }

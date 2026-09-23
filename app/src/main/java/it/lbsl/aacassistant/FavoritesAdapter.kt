@@ -14,7 +14,7 @@ import it.lbsl.aacassistant.databinding.ItemFavoriteBinding
 class FavoritesAdapter (
     private val onUse: (Favorite) -> Unit,
     private val onRemove: (Favorite) -> Unit
-) : ListAdapter<Favorite, FavoritesAdapter.VH> (DIFF) {
+) : ListAdapter<Favorite, FavoritesAdapter.VH>(DIFF) {
 
     class VH(val binding: ItemFavoriteBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -34,8 +34,7 @@ class FavoritesAdapter (
             favorite.usageCount
         )
 
-        //svuota sempre il contenitore prima di aggiungere nuovi elementi
-        //per evitare duplicati causati dal riciclo delle viste della RecyclerView
+        //le righe vengono riciclate: senza svuotare la striscia i pittogrammi si sommerebbero
         holder.binding.pictogramRow.removeAllViews()
 
         if (favorite.pictogramIds.isNotEmpty()) {
