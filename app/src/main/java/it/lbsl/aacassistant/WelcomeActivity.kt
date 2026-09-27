@@ -72,7 +72,7 @@ class WelcomeActivity : AppCompatActivity() {
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
             .setTheme(R.style.Theme_AACAssistant_FirebaseUI)
-            .setLogo(R.mipmap.ic_launcher_round)
+            .setLogo(R.mipmap.ic_launcher1_round)
             .build()
 
         signInLauncher.launch(signInIntent)

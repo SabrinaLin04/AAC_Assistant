@@ -30,7 +30,7 @@
             <ImageView
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:src="@mipmap/ic_launcher_round"
+                android:src="@mipmap/ic_launcher1_round"
                 android:contentDescription="@string/chat_app_icon" />
 
             <ProgressBar
