@@ -133,9 +133,9 @@
     <string name="removed_phrase">Rimossa</string>
 
     <string name="contexts_title">Dove sei?</string>
-    <string name="hint_contexts">Tocca il posto dove sei.</string>
-    <string name="hint_write">Tocca i pittogrammi o scrivi due parole, poi invia.</string>
-    <string name="hint_speak">Tocca Leggi: il telefono dice la frase ad alta voce.</string>
+    <string name="hint_contexts">Seleziona la situazione in cui ti trovi.</string>
+    <string name="hint_write">Premi "Suggerisci frasi" o scrivi qualcosa per iniziare.</string>
+    <string name="hint_speak">Tocca i pittogrammi per ingrandirli a schermo.</string>
 
     <string name="quick_phrases_title">Frasi pronte</string>
     <string-array name="quick_phrases">
@@ -148,9 +148,9 @@
     <string name="model_switch_current">%1$s ✓</string>
 
     <string name="profile_section_title">I tuoi dati</string>
-    <string name="profile_section_hint">Servono solo per ritrovare le tue frasi su un altro telefono.</string>
-    <string name="favorites_empty_title">Non hai ancora salvato frasi</string>
-    <string name="hint_favorites">Le frasi che salvi restano qui. Se tocchi Rimuovi, puoi ancora annullare subito dopo.</string>
+    <string name="profile_section_hint">Servono solo per ritrovare le tue frasi su un altro device.</string>
+    <string name="favorites_empty_title">Non hai frasi salvate</string>
+    <string name="hint_favorites">Le frasi che salvi rimangono qui. Toccale per interagire.</string>
 
     <string name="mode_intention">Voglio dire</string>
     <string name="mode_reply">Mi hanno detto</string>
@@ -181,15 +181,15 @@
     <string name="caregiver_confirm_title">Impostazioni per chi assiste</string>
     <string name="caregiver_confirm_message">Queste impostazioni cambiano il modo in cui l\'app suggerisce le frasi. Vuoi continuare?</string>
 
-    <string name="title_guide">Guida per chi assiste</string>
+    <string name="title_guide">Manuale d\'uso</string>
     <string name="guide_intro_title">A chi serve questa guida</string>
-    <string name="guide_intro">A chi prepara l\'app e accompagna la persona che la usa: un familiare, un educatore, un logopedista. Le impostazioni descritte qui non servono nell\'uso di tutti i giorni.</string>
-    <string name="guide_places_title">1. Preparare i posti</string>
-    <string name="guide_places">Ogni posto è una situazione: a tavola, dal medico, a scuola. Tocca + per aggiungerne uno e descrivilo in prima persona, come lo direbbe chi usa l\'app: \"Sono dal medico e voglio dire dove mi fa male\". Più la descrizione è concreta, più le frasi suggerite sono adatte. Il pittogramma viene scelto dal nome. Per modificare o eliminare un posto tocca la matita.</string>
+    <string name="guide_intro">A chi prepara l\'app e accompagna la persona che la usa come un familiare, un educatore, un logopedista ma anche all\'utente in prima persona.</string>
+    <string name="guide_places_title">1. Preparare i contesti</string>
+    <string name="guide_places">Ogni luogo è una situazione: a tavola, dal medico, a scuola. Tocca + per aggiungerne uno e descrivilo in prima persona, come lo direbbe chi usa l\'app: \"Sono dal medico e voglio dire dove mi fa male\". Più la descrizione è concreta, più le frasi suggerite sono adatte. Il pittogramma viene scelto dal nome. Per modificare o eliminare un posto tocca la matita.</string>
     <string name="guide_use_title">2. Come si usa</string>
-    <string name="guide_use">Si sceglie il posto, poi si compone il messaggio toccando i pittogrammi oppure scrivendo due parole. \"Voglio dire\" serve per esprimere qualcosa, \"Mi hanno detto\" per rispondere a chi ha parlato. Dopo l\'invio arrivano quattro frasi: Leggi le fa dire al telefono, Salva le tiene in Le mie frasi.</string>
+    <string name="guide_use">Si sceglie il contesto, poi si compone il messaggio toccando i pittogrammi oppure scrivendo due parole. \"Voglio dire\" serve per esprimere qualcosa, \"Mi hanno detto\" per rispondere a chi ha parlato. Dopo l\'invio arrivano quattro frasi: Leggi le fa dire al telefono, Salva le tiene in Le mie frasi.</string>
     <string name="guide_saved_title">3. Le frasi salvate</string>
-    <string name="guide_saved">Le frasi salvate in un posto compaiono per prime quando si torna lì. Vale la pena prepararle insieme: ci si orienta meglio con frasi che si conoscono già.</string>
+    <string name="guide_saved">Le frasi salvate in un contesto compaiono per prime quando si torna lì. Vale la pena prepararle insieme: ci si orienta meglio con frasi che si conoscono già.</string>
     <string name="guide_voice_title">4. Voce e dimensioni</string>
     <string name="guide_voice">Se il telefono non parla, manca la voce italiana: si installa dalle impostazioni della sintesi vocale. Per pittogrammi e testi più grandi si usano le impostazioni di sistema per la dimensione del carattere e dello schermo: l\'app si adatta.</string>
     <string name="guide_open_speech">Impostazioni della voce</string>
